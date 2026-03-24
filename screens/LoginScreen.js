@@ -55,11 +55,12 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome 👋</Text>
+      <Text style={styles.title}>Welcome TEST 👋</Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 
       <TextInput
         placeholder="Email"
+        placeholderTextColor="#9ca3af"
         value={email}
         onChangeText={setEmail}
         style={styles.input}
@@ -69,9 +70,12 @@ export default function LoginScreen() {
 
       <TextInput
         placeholder="Password"
+        placeholderTextColor="#9ca3af"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
         style={styles.input}
       />
 
@@ -80,6 +84,15 @@ export default function LoginScreen() {
           {loading ? "Signing in..." : "Login"}
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+  onPress={() => router.push("/register")}
+  style={styles.registerLinkContainer}
+>
+  <Text style={styles.registerLinkText}>
+    Don't have an account? Create one
+  </Text>
+</TouchableOpacity>
     </View>
   );
 }
@@ -105,12 +118,14 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   input: {
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#d1d5db",
     marginBottom: 12,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    color: "#111827",
+    fontSize: 16,
   },
   button: {
     backgroundColor: "#2563eb",
@@ -123,5 +138,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  registerLinkContainer: {
+  marginTop: 20,
+  alignItems: "center",
+},
+
+registerLinkText: {
+  color: "red",
+  fontSize: 16,
+  fontWeight: "bold",
+},
+  linkText: {
+    marginTop: 16,
+    textAlign: "center",
+    color: "#2563eb",
+    fontWeight: "600",
   },
 });
