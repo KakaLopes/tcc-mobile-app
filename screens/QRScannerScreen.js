@@ -32,10 +32,10 @@ export default function QRScannerScreen() {
       return;
     }
 
-    router.replace({
-      pathname: "/",
-      params: { qrValid: "true", action },
-    });
+   router.replace({
+  pathname: "/(tabs)/index",
+  params: { qrValid: "true", action },
+});
   }
 
   if (!permission) {

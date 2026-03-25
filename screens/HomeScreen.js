@@ -33,7 +33,7 @@ export default function HomeScreen() {
     loadDashboardData();
   }, []);
 
-  // 🔥 QR RETURN HANDLER
+  // 🔥 QUANDO VOLTA DO QR
   useEffect(() => {
     if (params?.qrValid === "true") {
       if (params?.action === "in") {
@@ -81,11 +81,11 @@ export default function HomeScreen() {
       const hasOpenEntry = entries.some((item) => !item.clock_out);
       setOpenEntry(hasOpenEntry);
     } catch (error) {
-      console.log(error);
+      console.log("DASHBOARD ERROR:", error?.response?.data || error.message);
     }
   }
 
-  // 📍 DISTÂNCIA
+  // 📍 CALCULAR DISTÂNCIA
   function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const φ1 = (lat1 * Math.PI) / 180;
@@ -107,7 +107,7 @@ export default function HomeScreen() {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
     if (status !== "granted") {
-      Alert.alert("Permission denied", "Location required.");
+      Alert.alert("Permission denied", "Location is required.");
       return false;
     }
 
@@ -121,8 +121,13 @@ export default function HomeScreen() {
       COMPANY_LOCATION.longitude
     );
 
+    console.log("DISTANCE:", distance);
+
     if (distance > MAX_DISTANCE_METERS) {
-      Alert.alert("Out of range", "You are not at the workplace.");
+      Alert.alert(
+        "Out of range",
+        "You must be at the workplace to clock in/out."
+      );
       return false;
     }
 
@@ -130,39 +135,47 @@ export default function HomeScreen() {
   }
 
   async function handleClockIn() {
-    const valid = await validateLocation();
-    if (!valid) return;
+    try {
+      const valid = await validateLocation();
+      if (!valid) return;
 
-    const token = await AsyncStorage.getItem("token");
+      const token = await AsyncStorage.getItem("token");
 
-    await api.post(
-      "/clock-in",
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+      await api.post(
+        "/clock-in",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    Alert.alert("Success", "Clock-in registered");
-    loadDashboardData();
+      Alert.alert("Success", "Clock-in registered");
+      loadDashboardData();
+    } catch (error) {
+      Alert.alert("Error", "Unable to register clock-in");
+    }
   }
 
   async function handleClockOut() {
-    const valid = await validateLocation();
-    if (!valid) return;
+    try {
+      const valid = await validateLocation();
+      if (!valid) return;
 
-    const token = await AsyncStorage.getItem("token");
+      const token = await AsyncStorage.getItem("token");
 
-    await api.post(
-      "/clock-out",
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+      await api.post(
+        "/clock-out",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    Alert.alert("Success", "Clock-out registered");
-    loadDashboardData();
+      Alert.alert("Success", "Clock-out registered");
+      loadDashboardData();
+    } catch (error) {
+      Alert.alert("Error", "Unable to register clock-out");
+    }
   }
 
   async function handleLogout() {
@@ -178,6 +191,16 @@ export default function HomeScreen() {
       <Text style={styles.welcome}>
         Welcome, {user?.full_name || "User"} 👋
       </Text>
+
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>Daily Summary</Text>
+
+        <Text>Hours today: {hoursToday}h</Text>
+        <Text>Total entries: {entriesCount}</Text>
+        <Text>
+          Status: {openEntry ? "Working..." : "No active shift"}
+        </Text>
+      </View>
 
       <TouchableOpacity
         style={styles.primaryButton}
@@ -197,9 +220,107 @@ export default function HomeScreen() {
         <Text style={styles.secondaryButtonText}>Clock Out</Text>
       </TouchableOpacity>
 
+      {user?.role === "admin" && (
+        <>
+          <TouchableOpacity
+            style={styles.adminButton}
+            onPress={() => router.push("/admin-adjustments")}
+          >
+            <Text style={styles.adminButtonText}>Admin Panel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.reportButton}
+            onPress={() => router.push("/admin-reports")}
+          >
+            <Text style={styles.reportButtonText}>Weekly Reports</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    backgroundColor: "#f5f7fb",
+    padding: 20,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  welcome: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  infoCard: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  primaryButton: {
+    backgroundColor: "#2563eb",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  primaryButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  secondaryButton: {
+    backgroundColor: "#ddd",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  secondaryButtonText: {
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  adminButton: {
+    backgroundColor: "#7c3aed",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  adminButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  reportButton: {
+    backgroundColor: "#0f766e",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  reportButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  logoutButton: {
+    backgroundColor: "#dc2626",
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  logoutButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+});

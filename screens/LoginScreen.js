@@ -55,7 +55,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome TEST 👋</Text>
+      <Text style={styles.title}>Welcome User 👋</Text>
       <Text style={styles.subtitle}>Sign in to continue</Text>
 
       <TextInput
