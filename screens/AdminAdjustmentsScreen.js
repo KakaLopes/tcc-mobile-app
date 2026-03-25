@@ -8,11 +8,13 @@ import {
   Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import api from "../services/api";
 
 export default function AdminAdjustmentsScreen() {
   const [adjustments, setAdjustments] = useState([]);
   const [user, setUser] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     loadUser();
@@ -146,7 +148,6 @@ export default function AdminAdjustmentsScreen() {
     );
   }
 
-  // 🔐 ADMIN PROTECTION
   if (user && user.role !== "admin") {
     return (
       <View style={styles.container}>
@@ -161,6 +162,17 @@ export default function AdminAdjustmentsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Pending Adjustments</Text>
+
+      <TouchableOpacity
+        style={styles.reportButton}
+        onPress={() => router.push("/admin-reports")}
+      >
+        <Text style={styles.reportButtonText}>Weekly Reports</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.refreshButton} onPress={loadAdjustments}>
+        <Text style={styles.refreshButtonText}>Refresh</Text>
+      </TouchableOpacity>
 
       {adjustments.length === 0 ? (
         <Text style={styles.empty}>No pending adjustments.</Text>
@@ -180,52 +192,78 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f7fb",
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 20,
-    color: "#000",
+    marginBottom: 16,
+    color: "#111827",
     textAlign: "center",
   },
-  card: {
-    backgroundColor: "#fff",
-    padding: 12,
-    marginBottom: 12,
+  reportButton: {
+    backgroundColor: "#0f766e",
+    paddingVertical: 14,
     borderRadius: 10,
+    marginBottom: 12,
+  },
+  reportButtonText: {
+    color: "#ffffff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  refreshButton: {
+    backgroundColor: "#ffffff",
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#d1d5db",
+  },
+  refreshButtonText: {
+    color: "#111827",
+    textAlign: "center",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    padding: 14,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
   titleCard: {
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 6,
-    color: "#000",
+    marginBottom: 8,
+    color: "#111827",
   },
   text: {
     fontSize: 14,
     marginBottom: 4,
-    color: "#000",
+    color: "#374151",
   },
   buttons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: 12,
   },
   approve: {
     backgroundColor: "#16a34a",
-    padding: 8,
-    borderRadius: 6,
+    padding: 10,
+    borderRadius: 8,
     flex: 1,
-    marginRight: 5,
+    marginRight: 6,
   },
   reject: {
     backgroundColor: "#dc2626",
-    padding: 8,
-    borderRadius: 6,
+    padding: 10,
+    borderRadius: 8,
     flex: 1,
-    marginLeft: 5,
+    marginLeft: 6,
   },
   buttonText: {
     color: "#fff",
@@ -234,7 +272,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     fontSize: 16,
-    color: "#000",
+    color: "#374151",
     textAlign: "center",
     marginTop: 40,
   },

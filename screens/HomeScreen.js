@@ -23,69 +23,66 @@ export default function HomeScreen() {
     loadDashboardData();
   }, []);
 
- async function loadUser() {
-  try {
-    const savedUser = await AsyncStorage.getItem("user");
-    const token = await AsyncStorage.getItem("token");
+  async function loadUser() {
+    try {
+      const savedUser = await AsyncStorage.getItem("user");
+      const token = await AsyncStorage.getItem("token");
 
-    if (!savedUser || !token) {
+      if (!savedUser || !token) {
+        router.replace("login");
+        return;
+      }
+
+      setUser(JSON.parse(savedUser));
+    } catch (error) {
+      console.log("LOAD USER ERROR:", error);
       router.replace("login");
-      return;
-    }
-
-    setUser(JSON.parse(savedUser));
-  } catch (error) {
-    console.log("LOAD USER ERROR:", error);
-    router.replace("login");
-  }
-}
-
-async function loadDashboardData() {
-  try {
-    const token = await AsyncStorage.getItem("token");
-
-    if (!token) {
-      router.replace("login");
-      return;
-    }
-
-    const [hoursResponse, entriesResponse] = await Promise.all([
-      api.get("/my-hours-today", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-      api.get("/my-entries", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }),
-    ]);
-
-    setHoursToday(hoursResponse.data.total_hours || 0);
-
-    const entries = entriesResponse.data || [];
-    setEntriesCount(entries.length);
-
-    const hasOpenEntry = entries.some((item) => !item.clock_out);
-    setOpenEntry(hasOpenEntry);
-  } catch (error) {
-    console.log(
-      "DASHBOARD ERROR:",
-      error?.response?.data || error.message
-    );
-
-    if (
-      error?.response?.status === 401 ||
-      error?.response?.data?.error?.includes("Token")
-    ) {
-      await AsyncStorage.removeItem("token");
-      await AsyncStorage.removeItem("user");
-      router.replace("login");
-      return;
     }
   }
-}
+
+  async function loadDashboardData() {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        router.replace("login");
+        return;
+      }
+
+      const [hoursResponse, entriesResponse] = await Promise.all([
+        api.get("/my-hours-today", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        api.get("/my-entries", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
+
+      setHoursToday(hoursResponse.data.total_hours || 0);
+
+      const entries = entriesResponse.data || [];
+      setEntriesCount(entries.length);
+
+      const hasOpenEntry = entries.some((item) => !item.clock_out);
+      setOpenEntry(hasOpenEntry);
+    } catch (error) {
+      console.log("DASHBOARD ERROR:", error?.response?.data || error.message);
+
+      if (
+        error?.response?.status === 401 ||
+        error?.response?.data?.error?.includes("Token")
+      ) {
+        await AsyncStorage.removeItem("token");
+        await AsyncStorage.removeItem("user");
+        router.replace("login");
+        return;
+      }
+    }
+  }
 
   async function handleClockIn() {
     try {
@@ -200,12 +197,21 @@ async function loadDashboardData() {
       </TouchableOpacity>
 
       {user?.role === "admin" && (
-        <TouchableOpacity
-          style={styles.adminButton}
-          onPress={() => router.push("/admin-adjustments")}
-        >
-          <Text style={styles.adminButtonText}>Admin Panel</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={styles.adminButton}
+            onPress={() => router.push("/admin-adjustments")}
+          >
+            <Text style={styles.adminButtonText}>Admin Panel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.reportButton}
+            onPress={() => router.push("/admin-reports")}
+          >
+            <Text style={styles.reportButtonText}>Weekly Reports</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -305,6 +311,18 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   adminButtonText: {
+    color: "#ffffff",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  reportButton: {
+    backgroundColor: "#0f766e",
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginBottom: 14,
+  },
+  reportButtonText: {
     color: "#ffffff",
     textAlign: "center",
     fontSize: 16,
