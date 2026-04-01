@@ -13,9 +13,10 @@ import * as Location from "expo-location";
 import api from "../services/api";
 
 const COMPANY_LOCATION = {
-  latitude: 53.3498,
-  longitude: -6.2603,
+  latitude: 53.31765337169595,
+  longitude: -6.285206028486653,
 };
+
 
 const MAX_DISTANCE_METERS = 100;
 
@@ -24,7 +25,7 @@ export default function HomeScreen() {
   const [hoursToday, setHoursToday] = useState(0);
   const [entriesCount, setEntriesCount] = useState(0);
   const [openEntry, setOpenEntry] = useState(false);
-
+const [qrHandled, setQrHandled] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -34,15 +35,17 @@ export default function HomeScreen() {
   }, []);
 
   // 🔥 QUANDO VOLTA DO QR
-  useEffect(() => {
-    if (params?.qrValid === "true") {
-      if (params?.action === "in") {
-        handleClockIn();
-      } else if (params?.action === "out") {
-        handleClockOut();
-      }
+ useEffect(() => {
+  if (params?.qrValid === "true" && !qrHandled) {
+    setQrHandled(true);
+
+    if (params?.action === "in") {
+      handleClockIn();
+    } else if (params?.action === "out") {
+      handleClockOut();
     }
-  }, [params]);
+  }
+}, [params, qrHandled]);
 
   async function loadUser() {
     try {
@@ -228,7 +231,12 @@ export default function HomeScreen() {
           >
             <Text style={styles.adminButtonText}>Admin Panel</Text>
           </TouchableOpacity>
-
+<TouchableOpacity
+  style={styles.leaveAdminButton}
+  onPress={() => router.push("/admin-leaves")}
+>
+  <Text style={styles.leaveAdminButtonText}>Approve Leave Requests</Text>
+</TouchableOpacity>
           <TouchableOpacity
             style={styles.reportButton}
             onPress={() => router.push("/admin-reports")}
@@ -237,7 +245,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </>
       )}
-
+<TouchableOpacity
+  style={styles.leaveButton}
+  onPress={() => router.push("/request-leave")}
+>
+  <Text style={styles.leaveButtonText}>Request Leave</Text>
+</TouchableOpacity>
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
@@ -275,6 +288,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
   },
+  leaveAdminButton: {
+  backgroundColor: "#8b5cf6",
+  padding: 14,
+  borderRadius: 10,
+  marginBottom: 12,
+},
+leaveAdminButtonText: {
+  color: "#ffffff",
+  textAlign: "center",
+  fontWeight: "bold",
+  fontSize: 16,
+},
   primaryButtonText: {
     color: "#fff",
     textAlign: "center",
@@ -290,6 +315,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
+  leaveButton: {
+  backgroundColor: "#f59e0b",
+  padding: 14,
+  borderRadius: 10,
+  marginBottom: 12,
+},
+leaveButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "bold",
+  fontSize: 16,
+},
   adminButton: {
     backgroundColor: "#7c3aed",
     padding: 14,
