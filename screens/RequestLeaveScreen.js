@@ -21,6 +21,23 @@ export default function RequestLeaveScreen() {
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function formatDateInput(value) {
+    const numbers = value.replace(/\D/g, "").slice(0, 8);
+
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 4) return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
+  }
+
+  function convertToApiDate(dateStr) {
+    const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+    if (!match) return null;
+
+    const [, day, month, year] = match;
+    return `${year}-${month}-${day}`;
+  }
+
   async function handleSubmit() {
     try {
       if (!leaveType || !startDate || !endDate) {
@@ -31,7 +48,15 @@ export default function RequestLeaveScreen() {
         return;
       }
 
-      if (endDate < startDate) {
+      const apiStartDate = convertToApiDate(startDate);
+      const apiEndDate = convertToApiDate(endDate);
+
+      if (!apiStartDate || !apiEndDate) {
+        Alert.alert("Error", "Please use the date format DD/MM/YYYY.");
+        return;
+      }
+
+      if (new Date(apiEndDate) < new Date(apiStartDate)) {
         Alert.alert("Error", "End date cannot be earlier than start date.");
         return;
       }
@@ -49,8 +74,8 @@ export default function RequestLeaveScreen() {
         "/leave",
         {
           leave_type: leaveType,
-          start_date: startDate,
-          end_date: endDate,
+          start_date: apiStartDate,
+          end_date: apiEndDate,
           reason,
         },
         {
@@ -127,22 +152,24 @@ export default function RequestLeaveScreen() {
 
       <Text style={styles.label}>Start date</Text>
       <TextInput
-        placeholder="YYYY-MM-DD"
+        placeholder="DD/MM/YYYY"
         placeholderTextColor="#9ca3af"
         value={startDate}
-        onChangeText={setStartDate}
+        onChangeText={(text) => setStartDate(formatDateInput(text))}
         style={styles.input}
-        autoCapitalize="none"
+        keyboardType="numeric"
+        maxLength={10}
       />
 
       <Text style={styles.label}>End date</Text>
       <TextInput
-        placeholder="YYYY-MM-DD"
+        placeholder="DD/MM/YYYY"
         placeholderTextColor="#9ca3af"
         value={endDate}
-        onChangeText={setEndDate}
+        onChangeText={(text) => setEndDate(formatDateInput(text))}
         style={styles.input}
-        autoCapitalize="none"
+        keyboardType="numeric"
+        maxLength={10}
       />
 
       <Text style={styles.label}>Reason</Text>

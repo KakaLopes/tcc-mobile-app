@@ -17,7 +17,6 @@ const COMPANY_LOCATION = {
   longitude: -6.285206028486653,
 };
 
-
 const MAX_DISTANCE_METERS = 100;
 
 export default function HomeScreen() {
@@ -25,27 +24,58 @@ export default function HomeScreen() {
   const [hoursToday, setHoursToday] = useState(0);
   const [entriesCount, setEntriesCount] = useState(0);
   const [openEntry, setOpenEntry] = useState(false);
-const [qrHandled, setQrHandled] = useState(false);
+  const [qrHandled, setQrHandled] = useState(false);
+  const [annualLeaveDays, setAnnualLeaveDays] = useState(0);
+  const [leaveBalance, setLeaveBalance] = useState(0);
+
   const router = useRouter();
   const params = useLocalSearchParams();
 
   useEffect(() => {
     loadUser();
     loadDashboardData();
+    loadLeaveBalance();
   }, []);
 
-  // 🔥 QUANDO VOLTA DO QR
- useEffect(() => {
-  if (params?.qrValid === "true" && !qrHandled) {
-    setQrHandled(true);
+  useEffect(() => {
+    if (params?.qrValid === "true" && !qrHandled) {
+      setQrHandled(true);
 
-    if (params?.action === "in") {
-      handleClockIn();
-    } else if (params?.action === "out") {
-      handleClockOut();
+      if (params?.action === "in") {
+        handleClockIn();
+      } else if (params?.action === "out") {
+        handleClockOut();
+      }
+    }
+  }, [params, qrHandled]);
+
+  async function loadLeaveBalance() {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) return;
+
+      const response = await api.get("/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = response.data;
+
+      setAnnualLeaveDays(data?.annual_leave_days || 20);
+      setLeaveBalance(
+        data?.leave_balance != null
+          ? data.leave_balance
+          : data?.annual_leave_days || 20
+      );
+    } catch (error) {
+      console.log(
+        "LOAD LEAVE BALANCE ERROR:",
+        error?.response?.data || error.message
+      );
     }
   }
-}, [params, qrHandled]);
 
   async function loadUser() {
     try {
@@ -88,7 +118,6 @@ const [qrHandled, setQrHandled] = useState(false);
     }
   }
 
-  // 📍 CALCULAR DISTÂNCIA
   function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const φ1 = (lat1 * Math.PI) / 180;
@@ -98,14 +127,11 @@ const [qrHandled, setQrHandled] = useState(false);
 
     const a =
       Math.sin(Δφ / 2) ** 2 +
-      Math.cos(φ1) *
-        Math.cos(φ2) *
-        Math.sin(Δλ / 2) ** 2;
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
 
     return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
-  // 📍 VALIDAR LOCALIZAÇÃO
   async function validateLocation() {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
@@ -155,7 +181,10 @@ const [qrHandled, setQrHandled] = useState(false);
       Alert.alert("Success", "Clock-in registered");
       loadDashboardData();
     } catch (error) {
-      Alert.alert("Error", "Unable to register clock-in");
+      Alert.alert(
+        "Error",
+        error?.response?.data?.error || "Unable to register clock-in"
+      );
     }
   }
 
@@ -177,7 +206,10 @@ const [qrHandled, setQrHandled] = useState(false);
       Alert.alert("Success", "Clock-out registered");
       loadDashboardData();
     } catch (error) {
-      Alert.alert("Error", "Unable to register clock-out");
+      Alert.alert(
+        "Error",
+        error?.response?.data?.error || "Unable to register clock-out"
+      );
     }
   }
 
@@ -198,12 +230,35 @@ const [qrHandled, setQrHandled] = useState(false);
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Daily Summary</Text>
 
-        <Text>Hours today: {hoursToday}h</Text>
-        <Text>Total entries: {entriesCount}</Text>
-        <Text>
-          Status: {openEntry ? "Working..." : "No active shift"}
-        </Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Hours today</Text>
+          <Text style={styles.infoValue}>{hoursToday}h</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Total entries</Text>
+          <Text style={styles.infoValue}>{entriesCount}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Shift status</Text>
+          <Text style={openEntry ? styles.statusOpen : styles.statusClosed}>
+            {openEntry ? "Working..." : "No active shift"}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Annual leave</Text>
+          <Text style={styles.infoValue}>{annualLeaveDays} days</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Leave balance</Text>
+          <Text style={styles.infoValue}>{leaveBalance} days</Text>
+        </View>
       </View>
+
+      <Text style={styles.sectionTitle}>Work Actions</Text>
 
       <TouchableOpacity
         style={styles.primaryButton}
@@ -223,20 +278,42 @@ const [qrHandled, setQrHandled] = useState(false);
         <Text style={styles.secondaryButtonText}>Clock Out</Text>
       </TouchableOpacity>
 
+      <Text style={styles.sectionTitle}>Leave Management</Text>
+
+      <TouchableOpacity
+        style={styles.leaveButton}
+        onPress={() => router.push("/request-leave")}
+      >
+        <Text style={styles.leaveButtonText}>Request Leave</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.myLeavesButton}
+        onPress={() => router.push("/my-leaves")}
+      >
+        <Text style={styles.myLeavesButtonText}>My Leave Requests</Text>
+      </TouchableOpacity>
+
       {user?.role === "admin" && (
         <>
+          <Text style={styles.sectionTitle}>Admin Tools</Text>
+
           <TouchableOpacity
             style={styles.adminButton}
             onPress={() => router.push("/admin-adjustments")}
           >
             <Text style={styles.adminButtonText}>Admin Panel</Text>
           </TouchableOpacity>
-<TouchableOpacity
-  style={styles.leaveAdminButton}
-  onPress={() => router.push("/admin-leaves")}
->
-  <Text style={styles.leaveAdminButtonText}>Approve Leave Requests</Text>
-</TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.leaveAdminButton}
+            onPress={() => router.push("/admin-leaves")}
+          >
+            <Text style={styles.leaveAdminButtonText}>
+              Approve Leave Requests
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.reportButton}
             onPress={() => router.push("/admin-reports")}
@@ -245,12 +322,7 @@ const [qrHandled, setQrHandled] = useState(false);
           </TouchableOpacity>
         </>
       )}
-<TouchableOpacity
-  style={styles.leaveButton}
-  onPress={() => router.push("/request-leave")}
->
-  <Text style={styles.leaveButtonText}>Request Leave</Text>
-</TouchableOpacity>
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
@@ -266,98 +338,158 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: "bold",
     textAlign: "center",
+    color: "#111827",
     marginBottom: 10,
   },
   welcome: {
     fontSize: 18,
     textAlign: "center",
+    color: "#374151",
     marginBottom: 24,
   },
   infoCard: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
+    backgroundColor: "#ffffff",
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  infoTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 14,
+  },
+  infoRow: {
+    marginBottom: 10,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  statusOpen: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#d97706",
+  },
+  statusClosed: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#15803d",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#374151",
+    marginBottom: 10,
+    marginTop: 4,
   },
   primaryButton: {
     backgroundColor: "#2563eb",
-    padding: 14,
-    borderRadius: 10,
+    padding: 15,
+    borderRadius: 12,
     marginBottom: 12,
   },
-  leaveAdminButton: {
-  backgroundColor: "#8b5cf6",
-  padding: 14,
-  borderRadius: 10,
-  marginBottom: 12,
-},
-leaveAdminButtonText: {
-  color: "#ffffff",
-  textAlign: "center",
-  fontWeight: "bold",
-  fontSize: 16,
-},
   primaryButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 17,
   },
   secondaryButton: {
-    backgroundColor: "#ddd",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 12,
+    backgroundColor: "#ffffff",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
   },
   secondaryButtonText: {
+    color: "#111827",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 17,
   },
   leaveButton: {
-  backgroundColor: "#f59e0b",
-  padding: 14,
-  borderRadius: 10,
-  marginBottom: 12,
-},
-leaveButtonText: {
-  color: "#fff",
-  textAlign: "center",
-  fontWeight: "bold",
-  fontSize: 16,
-},
+    backgroundColor: "#f59e0b",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  leaveButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 17,
+  },
+  myLeavesButton: {
+    backgroundColor: "#0ea5e9",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 18,
+  },
+  myLeavesButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 17,
+  },
   adminButton: {
     backgroundColor: "#7c3aed",
-    padding: 14,
-    borderRadius: 10,
+    padding: 15,
+    borderRadius: 12,
     marginBottom: 12,
   },
   adminButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 17,
+  },
+  leaveAdminButton: {
+    backgroundColor: "#8b5cf6",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  leaveAdminButtonText: {
+    color: "#ffffff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 17,
   },
   reportButton: {
     backgroundColor: "#0f766e",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 12,
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
   },
   reportButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 17,
   },
   logoutButton: {
     backgroundColor: "#dc2626",
-    padding: 14,
-    borderRadius: 10,
-    marginTop: 10,
+    padding: 15,
+    borderRadius: 12,
+    marginTop: 4,
   },
   logoutButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 17,
   },
 });

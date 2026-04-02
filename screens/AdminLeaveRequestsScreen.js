@@ -80,7 +80,20 @@ export default function AdminLeaveRequestsScreen() {
   }
 
   function formatDate(date) {
-    return new Date(date).toLocaleDateString("en-IE");
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+
+    return `${day}/${month}/${year}`;
+  }
+
+  function calculateDays(start, end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const diffMs = endDate.getTime() - startDate.getTime();
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
   }
 
   function renderStatus(status) {
@@ -100,6 +113,9 @@ export default function AdminLeaveRequestsScreen() {
         <Text style={styles.info}>Type: {item.leave_type}</Text>
         <Text style={styles.info}>Start: {formatDate(item.start_date)}</Text>
         <Text style={styles.info}>End: {formatDate(item.end_date)}</Text>
+        <Text style={styles.info}>
+          Days: {calculateDays(item.start_date, item.end_date)}
+        </Text>
         <Text style={styles.info}>Reason: {item.reason || "-"}</Text>
 
         <Text style={[styles.status, renderStatus(item.status)]}>
