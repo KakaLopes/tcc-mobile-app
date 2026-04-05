@@ -163,13 +163,6 @@ export default function AdminAdjustmentsScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Pending Adjustments</Text>
 
-      <TouchableOpacity
-        style={styles.reportButton}
-        onPress={() => router.push("/admin-reports")}
-      >
-        <Text style={styles.reportButtonText}>Weekly Reports</Text>
-      </TouchableOpacity>
-
       <TouchableOpacity style={styles.refreshButton} onPress={loadAdjustments}>
         <Text style={styles.refreshButtonText}>Refresh</Text>
       </TouchableOpacity>

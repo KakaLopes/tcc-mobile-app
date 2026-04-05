@@ -295,33 +295,17 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {user?.role === "admin" && (
-        <>
-          <Text style={styles.sectionTitle}>Admin Tools</Text>
+  <>
+    <Text style={styles.sectionTitle}>Admin Tools</Text>
 
-          <TouchableOpacity
-            style={styles.adminButton}
-            onPress={() => router.push("/admin-adjustments")}
-          >
-            <Text style={styles.adminButtonText}>Admin Panel</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.leaveAdminButton}
-            onPress={() => router.push("/admin-leaves")}
-          >
-            <Text style={styles.leaveAdminButtonText}>
-              Approve Leave Requests
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.reportButton}
-            onPress={() => router.push("/admin-reports")}
-          >
-            <Text style={styles.reportButtonText}>Weekly Reports</Text>
-          </TouchableOpacity>
-        </>
-      )}
+    <TouchableOpacity
+      style={styles.adminButton}
+      onPress={() => router.push("/admin-panel")}
+    >
+      <Text style={styles.adminButtonText}>Admin Panel</Text>
+    </TouchableOpacity>
+  </>
+)}
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
@@ -456,30 +440,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 17,
   },
-  leaveAdminButton: {
-    backgroundColor: "#8b5cf6",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  leaveAdminButtonText: {
-    color: "#ffffff",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
-  },
-  reportButton: {
-    backgroundColor: "#0f766e",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  reportButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
-  },
+ 
   logoutButton: {
     backgroundColor: "#dc2626",
     padding: 15,
