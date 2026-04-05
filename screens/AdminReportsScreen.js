@@ -147,29 +147,23 @@ export default function AdminReportsScreen() {
 
 async function handleExportPDF() {
   try {
-    const selectedData = employees.filter((employee) =>
-      selectedEmployees.includes(employee.id)
+    const selectedData = employees.filter(
+      (employee) =>
+        selectedEmployees.includes(employee.id) &&
+        employee.active !== false
     );
 
     if (selectedData.length === 0) {
-      Alert.alert("Warning", "Please select at least one employee");
+      Alert.alert("Warning", "Please select at least one active employee");
       return;
     }
 
     const officialPayroll = selectedData.filter(
-      (employee) =>
-        employee.active !== false &&
-        employee.payment_type !== "cash_in_hand"
+      (employee) => employee.payment_type !== "cash_in_hand"
     );
 
     const cashPayments = selectedData.filter(
-      (employee) =>
-        employee.active !== false &&
-        employee.payment_type === "cash_in_hand"
-    );
-
-    const inactiveEmployees = selectedData.filter(
-      (employee) => employee.active === false
+      (employee) => employee.payment_type === "cash_in_hand"
     );
 
     const html = `
@@ -177,7 +171,7 @@ async function handleExportPDF() {
         <body style="font-family: Arial; padding: 24px; color: #111827;">
           <h1 style="margin-bottom: 8px;">Weekly Report</h1>
           <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
-          <p><strong>Total selected employees:</strong> ${selectedData.length}</p>
+          <p><strong>Total selected active employees:</strong> ${selectedData.length}</p>
 
           <hr style="margin: 20px 0;" />
 
@@ -223,30 +217,6 @@ async function handleExportPDF() {
                   )
                   .join("")
               : `<p>No cash payments in this selection.</p>`
-          }
-
-          <hr style="margin: 24px 0;" />
-
-          <h2 style="color: #dc2626;">Inactive Employees</h2>
-          <p style="margin-top: 0;">
-            Employees marked as inactive. Listed for reference only.
-          </p>
-          ${
-            inactiveEmployees.length > 0
-              ? inactiveEmployees
-                  .map(
-                    (item) => `
-                      <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2;">
-                        <strong>${item.full_name || "Employee"}</strong><br/>
-                        ${item.email || "-"}<br/>
-                        Payment type: ${item.payment_type || "Not defined"}<br/>
-                        Status: Inactive<br/>
-                        Worked: ${formatHours(item.total_hours)}
-                      </div>
-                    `
-                  )
-                  .join("")
-              : `<p>No inactive employees in this selection.</p>`
           }
         </body>
       </html>
