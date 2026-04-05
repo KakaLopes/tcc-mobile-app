@@ -1,50 +1,121 @@
-# Welcome to your Expo app 👋
+# Time Tracker Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile workforce management application built with **React Native** and **Expo**, designed to help companies manage employee attendance, leave requests, weekly reports, and administrative controls in a practical and organized way.
 
-## Get started
+## Overview
 
-1. Install dependencies
+This project was developed as part of a college final project and simulates a real business environment where managers need to:
 
-   ```bash
-   npm install
-   ```
+- register employee attendance
+- control clock in / clock out
+- manage annual leave and leave requests
+- review and approve admin actions
+- classify employees by payment type
+- export weekly PDF reports for different business purposes
 
-2. Start the app
+The app supports both **employee features** and **admin features**, with role-based access to management tools.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## Main Features
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Employee Features
+- Secure login
+- Daily dashboard
+- Clock in and clock out
+- QR scanner integration
+- Workplace location validation
+- Leave request submission
+- My leave requests view
+- Leave balance and annual leave tracking
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Admin Features
+- Admin panel
+- Admin dashboard with weekly summary
+- Manage employees
+- Edit employee status
+- Edit employee type
+- Edit payment type
+- View pending adjustments
+- Approve leave requests
+- Weekly reports
+- Export accountant PDF
+- Export internal business report
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## Payment Type Logic
+
+The system supports different employee payment types:
+
+- `weekly`
+- `monthly`
+- `cash_in_hand`
+
+### Business Rule
+Employees marked as `cash_in_hand`:
+- remain visible in the system
+- remain visible in internal reports
+- are excluded from the accountant PDF
+
+This reflects a more realistic business workflow, where internal operational records may differ from official payroll exports.
+
+---
+
+## Admin Dashboard
+
+The admin dashboard provides a quick summary of:
+
+- total employees
+- active employees
+- inactive employees
+- cash in hand employees
+- weekly work summary
+
+This helps managers make operational decisions quickly and keep visibility over the workforce.
+
+---
+
+## Weekly Reports
+
+The app provides two different PDF report flows:
+
+### 1. Accountant PDF
+Used for official payroll/accounting purposes.
+- includes only active employees
+- excludes `cash_in_hand`
+- excludes inactive employees
+
+### 2. Internal Report
+Used for internal business control.
+- includes active employees
+- separates cash-in-hand employees
+- supports operational visibility for daily payments
+
+---
+
+## Tech Stack
+
+### Mobile
+- React Native
+- Expo
+- Expo Router
+- Axios
+- AsyncStorage
+- Expo Print
+- Expo Sharing
+- Expo Location
+
+### Backend Integration
+This mobile app connects to a Node.js + Express backend with Prisma ORM and MySQL.
+
+---
+
+## Project Structure
 
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+app/
+screens/
+services/
+components/
+assets/
