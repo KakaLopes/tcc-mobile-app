@@ -16,6 +16,13 @@ export default function AdminPanelScreen() {
 
       <TouchableOpacity
         style={styles.button}
+        onPress={() => router.push("/admin-dashboard")}
+      >
+        <Text style={styles.buttonText}>Admin Dashboard</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
         onPress={() => router.push("/admin-employees")}
       >
         <Text style={styles.buttonText}>Manage Employees</Text>
