@@ -96,10 +96,7 @@ export default function AdminReportsScreen() {
 
       setEmployees(mergedEmployees);
 
-      const defaultSelected = mergedEmployees
-        .filter((employee) => !isCashInHand(employee))
-        .map((employee) => employee.id);
-
+      const defaultSelected = mergedEmployees.map((employee) => employee.id);
       setSelectedEmployees(defaultSelected);
     } catch (error) {
       console.log(
@@ -133,11 +130,8 @@ export default function AdminReportsScreen() {
     });
   }
 
-  function selectAllNonCashInHand() {
-    const ids = employees
-      .filter((employee) => !isCashInHand(employee))
-      .map((employee) => employee.id);
-
+  function selectAllEmployees() {
+    const ids = employees.map((employee) => employee.id);
     setSelectedEmployees(ids);
   }
 
@@ -145,94 +139,147 @@ export default function AdminReportsScreen() {
     setSelectedEmployees([]);
   }
 
-async function handleExportPDF() {
-  try {
-    const selectedData = employees.filter(
-      (employee) =>
-        selectedEmployees.includes(employee.id) &&
-        employee.active !== false
-    );
+  async function handleExportPDF() {
+    try {
+      const selectedData = employees.filter(
+        (employee) =>
+          selectedEmployees.includes(employee.id) &&
+          employee.active !== false &&
+          employee.payment_type !== "cash_in_hand"
+      );
 
-    if (selectedData.length === 0) {
-      Alert.alert("Warning", "Please select at least one active employee");
-      return;
+      if (selectedData.length === 0) {
+        Alert.alert(
+          "Warning",
+          "Please select at least one eligible employee for the accountant PDF"
+        );
+        return;
+      }
+
+      const html = `
+        <html>
+          <body style="font-family: Arial; padding: 24px; color: #111827;">
+            <h1 style="margin-bottom: 8px;">Weekly Report</h1>
+            <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
+
+            <hr style="margin: 20px 0;" />
+
+            <h2 style="color: #2563eb;">Official Payroll</h2>
+            <p style="margin-top: 0;">
+              Employees included in the accountant report.
+            </p>
+
+            ${selectedData
+              .map(
+                (item) => `
+                  <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+                    <strong>${item.full_name || "Employee"}</strong><br/>
+                    ${item.email || "-"}<br/>
+                    Payment type: ${item.payment_type || "Not defined"}<br/>
+                    Worked: ${formatHours(item.total_hours)}
+                  </div>
+                `
+              )
+              .join("")}
+          </body>
+        </html>
+      `;
+
+      const file = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(file.uri);
+    } catch (error) {
+      console.log("PDF ERROR:", error);
+      Alert.alert("Error", "Failed to generate PDF");
     }
-
-    const officialPayroll = selectedData.filter(
-      (employee) => employee.payment_type !== "cash_in_hand"
-    );
-
-    const cashPayments = selectedData.filter(
-      (employee) => employee.payment_type === "cash_in_hand"
-    );
-
-    const html = `
-      <html>
-        <body style="font-family: Arial; padding: 24px; color: #111827;">
-          <h1 style="margin-bottom: 8px;">Weekly Report</h1>
-          <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
-          <p><strong>Total selected active employees:</strong> ${selectedData.length}</p>
-
-          <hr style="margin: 20px 0;" />
-
-          <h2 style="color: #2563eb;">Official Payroll</h2>
-          <p style="margin-top: 0;">
-            Employees included in the accountant report.
-          </p>
-          ${
-            officialPayroll.length > 0
-              ? officialPayroll
-                  .map(
-                    (item) => `
-                      <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                        <strong>${item.full_name || "Employee"}</strong><br/>
-                        ${item.email || "-"}<br/>
-                        Payment type: ${item.payment_type || "Not defined"}<br/>
-                        Worked: ${formatHours(item.total_hours)}
-                      </div>
-                    `
-                  )
-                  .join("")
-              : `<p>No employees in official payroll for this selection.</p>`
-          }
-
-          <hr style="margin: 24px 0;" />
-
-          <h2 style="color: #b45309;">Cash Payments</h2>
-          <p style="margin-top: 0;">
-            Internal operational record. Not included in accountant payroll.
-          </p>
-          ${
-            cashPayments.length > 0
-              ? cashPayments
-                  .map(
-                    (item) => `
-                      <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #f59e0b; border-radius: 8px; background: #fffbeb;">
-                        <strong>${item.full_name || "Employee"}</strong><br/>
-                        ${item.email || "-"}<br/>
-                        Payment type: ${item.payment_type || "cash_in_hand"}<br/>
-                        Worked: ${formatHours(item.total_hours)}
-                      </div>
-                    `
-                  )
-                  .join("")
-              : `<p>No cash payments in this selection.</p>`
-          }
-        </body>
-      </html>
-    `;
-
-    const file = await Print.printToFileAsync({ html });
-    await Sharing.shareAsync(file.uri);
-  } catch (error) {
-    console.log("PDF ERROR:", error);
-    Alert.alert("Error", "Failed to generate PDF");
   }
-}
+
+  async function handleExportInternalReport() {
+    try {
+      const selectedData = employees.filter((employee) =>
+        selectedEmployees.includes(employee.id)
+      );
+
+      if (selectedData.length === 0) {
+        Alert.alert("Warning", "Please select at least one employee");
+        return;
+      }
+
+      const activeEmployees = selectedData.filter(
+        (employee) =>
+          employee.active !== false &&
+          employee.payment_type !== "cash_in_hand"
+      );
+
+      const cashPayments = selectedData.filter(
+        (employee) =>
+          employee.active !== false &&
+          employee.payment_type === "cash_in_hand"
+      );
+
+      const html = `
+        <html>
+          <body style="font-family: Arial; padding: 24px; color: #111827;">
+            <h1 style="margin-bottom: 8px;">Internal Weekly Report</h1>
+            <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
+
+            <hr style="margin: 20px 0;" />
+
+            <h2 style="color: #2563eb;">Active Employees</h2>
+            ${
+              activeEmployees.length > 0
+                ? activeEmployees
+                    .map(
+                      (item) => `
+                        <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+                          <strong>${item.full_name || "Employee"}</strong><br/>
+                          ${item.email || "-"}<br/>
+                          Payment type: ${item.payment_type || "Not defined"}<br/>
+                          Worked: ${formatHours(item.total_hours)}
+                        </div>
+                      `
+                    )
+                    .join("")
+                : `<p>No active employees in this selection.</p>`
+            }
+
+            <hr style="margin: 24px 0;" />
+
+            <h2 style="color: #b45309;">Cash in Hand</h2>
+            <p style="margin-top: 0;">
+              Internal operational record for same-day or direct cash payments.
+            </p>
+            ${
+              cashPayments.length > 0
+                ? cashPayments
+                    .map(
+                      (item) => `
+                        <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #f59e0b; border-radius: 8px; background: #fffbeb;">
+                          <strong>${item.full_name || "Employee"}</strong><br/>
+                          ${item.email || "-"}<br/>
+                          Payment type: ${item.payment_type || "cash_in_hand"}<br/>
+                          Worked: ${formatHours(item.total_hours)}
+                        </div>
+                      `
+                    )
+                    .join("")
+                : `<p>No cash in hand employees in this selection.</p>`
+            }
+          </body>
+        </html>
+      `;
+
+      const file = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(file.uri);
+    } catch (error) {
+      console.log("INTERNAL PDF ERROR:", error);
+      Alert.alert("Error", "Failed to generate internal report");
+    }
+  }
 
   function renderItem({ item }) {
     const isSelected = selectedEmployees.includes(item.id);
     const cashInHand = isCashInHand(item);
+    const isInactive = item.active === false;
 
     return (
       <TouchableOpacity
@@ -240,6 +287,7 @@ async function handleExportPDF() {
           styles.card,
           isSelected && styles.cardSelected,
           cashInHand && styles.cardCashInHand,
+          isInactive && styles.cardInactive,
         ]}
         onPress={() => toggleEmployeeSelection(item.id)}
         activeOpacity={0.8}
@@ -253,10 +301,16 @@ async function handleExportPDF() {
             </Text>
 
             {cashInHand && (
-  <Text style={styles.cashLabel}>
-    Cash in hand - visible in app, excluded from accountant PDF
-  </Text>
-)}
+              <Text style={styles.cashLabel}>
+                Cash in hand - visible in app, excluded from accountant PDF
+              </Text>
+            )}
+
+            {isInactive && (
+              <Text style={styles.inactiveLabel}>
+                Inactive employee
+              </Text>
+            )}
           </View>
 
           <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -290,16 +344,23 @@ async function handleExportPDF() {
       <View style={styles.summaryCard}>
         <Text>Week: {weekStart} to {weekEnd}</Text>
         <Text>Total employees: {employees.length}</Text>
-        <Text>Selected for PDF: {selectedEmployees.length}</Text>
+        <Text>Selected: {selectedEmployees.length}</Text>
       </View>
 
       <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-        <Text style={styles.buttonText}>Export PDF</Text>
+        <Text style={styles.buttonText}>Export Accountant PDF</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.secondaryButton}
-        onPress={selectAllNonCashInHand}
+        onPress={handleExportInternalReport}
+      >
+        <Text style={styles.buttonText}>Export Internal Report</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={selectAllEmployees}
       >
         <Text style={styles.buttonText}>Select All</Text>
       </TouchableOpacity>
@@ -410,6 +471,9 @@ const styles = StyleSheet.create({
   cardCashInHand: {
     backgroundColor: "#fef2f2",
   },
+  cardInactive: {
+    backgroundColor: "#f3f4f6",
+  },
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -431,6 +495,12 @@ const styles = StyleSheet.create({
   cashLabel: {
     marginTop: 6,
     color: "#b91c1c",
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  inactiveLabel: {
+    marginTop: 6,
+    color: "#6b7280",
     fontWeight: "600",
     fontSize: 12,
   },
