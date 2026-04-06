@@ -47,18 +47,14 @@ The system supports both **employee operations** and **admin management features
 
 ## 🏗️ System Architecture
 
-The mobile application communicates with a backend API using a REST architecture.
+The backend follows a REST API architecture, organized into layers:
 
-```
-Mobile App (React Native)
-        ↓
-     Axios API
-        ↓
-Backend (Node.js + Express)
-        ↓
-     Prisma ORM
-        ↓
-      MySQL
+Controllers – business logic
+Routes – API endpoints
+Middlewares – authentication and authorization
+Prisma ORM – database access
+MySQL – data storage
+Authentication is handled using JWT (JSON Web Token).
 ```
 
 ---
@@ -144,11 +140,28 @@ The dashboard provides real-time insights:
 ## 📂 Project Structure
 
 ```
-app/
-screens/
-services/
-components/
-assets/
+backend
+│
+├── controllers
+│   ├── adminController.js
+│   ├── authController.js
+│   ├── adjustmentController.js
+│   ├── reportController.js
+│   └── timeEntryController.js
+│
+├── routes
+│   ├── adminRoutes.js
+│   ├── reportRoutes.js
+│   └── userRoutes.js
+│
+├── middlewares
+│   └── auth.js
+│
+├── prisma
+│   └── schema.prisma
+│
+├── index.js
+└── package.json
 ```
 
 ---
