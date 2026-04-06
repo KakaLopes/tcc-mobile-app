@@ -1,143 +1,42 @@
-# 📱 Time Tracker Mobile App
+# ⏱ Work Time Management System
 
-A mobile workforce management application built with **React Native** and **Expo**, designed to manage employee attendance, working hours, and administrative processes in a real business environment.
+This project was developed as part of a **Final Year Project (TCC)** for the **Software Engineering** course.
 
----
+The system allows users to register and manage their working hours, including clock-in/out, time adjustments, administrative reports, and action auditing.
 
-## 📖 Overview
-
-This project was developed as part of a **Final Year Project (TCC)** in Software Engineering.
-
-The application allows companies to manage:
-
-* employee attendance
-* clock in / clock out
-* leave requests
-* employee classification
-* administrative workflows
-* weekly reports and PDF exports
-
-The system supports both **employee operations** and **admin management features**, reflecting real-world business needs.
+The backend was built using **Node.js**, **Express**, **Prisma ORM**, and **MySQL**, following a **REST API architecture**.
 
 ---
 
-## 🚀 Technologies Used
+# 🚀 Technologies Used
 
-### 📱 Mobile
-
-* React Native
-* Expo
-* Expo Router
-* Axios
-* AsyncStorage
-
-### 📦 Native Features
-
-* Expo Print (PDF generation)
-* Expo Sharing
-* Expo Location
-
-### 🔗 Backend Integration
-
-* REST API (Node.js + Express)
-* Prisma ORM
-* MySQL Database
+- Node.js  
+- Express  
+- Prisma ORM  
+- MySQL  
+- JWT (JSON Web Token)  
+- bcrypt  
+- Thunder Client  
+- Git & GitHub  
+- React Native (Expo)  
 
 ---
 
-## 🏗️ System Architecture
+# 🏗 System Architecture
 
-The backend follows a REST API architecture, organized into layers:
+The backend follows a **REST API architecture**, organized into layers:
 
-Controllers – business logic
-Routes – API endpoints
-Middlewares – authentication and authorization
-Prisma ORM – database access
-MySQL – data storage
-Authentication is handled using JWT (JSON Web Token).
-```
+- Controllers – business logic  
+- Routes – API endpoints  
+- Middlewares – authentication and authorization  
+- Prisma ORM – database access  
+- MySQL – data storage  
 
----
-
-## 📱 Features
-
-### 👤 Employee Features
-
-* Secure login
-* Daily dashboard
-* Clock in / clock out
-* QR Code scanning
-* Location validation
-* Leave request submission
-* Leave history
-* Annual leave tracking
+Authentication is handled using **JWT (JSON Web Token)**.
 
 ---
 
-### 🛠️ Admin Features
-
-* Admin panel
-* Admin dashboard (weekly overview)
-* Manage employees
-* Edit employee status (active/inactive)
-* Edit employee type (temporary/full-time)
-* Edit payment type
-* Approve leave requests
-* View pending adjustments
-
----
-
-## 💰 Payment Types Logic
-
-The system supports different payment structures:
-
-* `weekly`
-* `monthly`
-* `cash_in_hand`
-
-### Business Rule
-
-Employees marked as **cash_in_hand**:
-
-* are visible in the app
-* appear in internal reports
-* are excluded from official accountant PDF reports
-
-This reflects real-world financial workflows.
-
----
-
-## 📊 Reports System
-
-### 📄 Accountant Report (PDF)
-
-* Includes only valid employees
-* Excludes cash-in-hand
-* Excludes inactive employees
-
----
-
-### 📋 Internal Report
-
-* Includes all active employees
-* Separates cash-in-hand workers
-* Supports daily business operations
-
----
-
-## 📊 Admin Dashboard
-
-The dashboard provides real-time insights:
-
-* Total employees
-* Active employees
-* Inactive employees
-* Cash in hand employees
-* Weekly work summary
-
----
-
-## 📂 Project Structure
+# 📂 Project Structure
 
 ```
 backend
@@ -166,93 +65,239 @@ backend
 
 ---
 
-## ⚙️ How to Run
+# 🔐 Authentication
 
-### 1. Clone repository
+After login, the token must be sent in the request header:
 
-```bash
-git clone https://github.com/KakaLopes/tcc-mobile-app.git
+```
+Authorization: Bearer TOKEN
 ```
 
-### 2. Install dependencies
+---
 
-```bash
+# 👤 Users
+
+## Create User
+
+POST `/users`
+
+```json
+{
+  "full_name": "Maria Silva",
+  "email": "silva@email.com",
+  "password": "123456"
+}
+```
+
+---
+
+## Login
+
+POST `/login`
+
+```json
+{
+  "email": "silva@email.com",
+  "password": "123456"
+}
+```
+
+---
+
+# ⏱ Work Time Management
+
+Clock-in
+
+```
+POST /clock-in
+```
+
+Clock-out
+
+```
+POST /clock-out
+```
+
+View work history
+
+```
+GET /my-entries
+```
+
+---
+
+# 📝 Time Adjustments
+
+Request adjustment
+
+```
+POST /adjustments/request
+```
+
+```json
+{
+  "work_entry_id": "ENTRY_ID",
+  "old_value": "2026-03-10T08:11:00.000Z",
+  "new_value": "2026-03-10T08:10:00.000Z",
+  "reason": "Forgot to clock in"
+}
+```
+
+---
+
+# 👨‍💼 Admin Features
+
+Dashboard
+
+```
+GET /admin/dashboard
+```
+
+Approve adjustment
+
+```
+POST /admin/adjustments/:id/approve
+```
+
+Reject adjustment
+
+```
+POST /admin/adjustments/:id/reject
+```
+
+---
+
+# 📊 Reports
+
+Hours today
+
+```
+GET /admin/reports/hours-today
+```
+
+Weekly hours
+
+```
+GET /admin/reports/hours-week
+```
+
+Hours by date range
+
+```
+GET /admin/reports/hours-range
+```
+
+Example:
+
+```
+/admin/reports/hours-range?start=2026-03-01&end=2026-03-10
+```
+
+---
+
+# 🧾 Audit Logs
+
+```
+GET /admin/audit-logs
+```
+
+---
+
+# ❤️ Health Check
+
+```
+GET /admin/health
+```
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "server": "online",
+  "database": "connected"
+}
+```
+
+---
+
+# ▶️ How to Run the Project
+
+Clone the repository
+
+```
+git clone https://github.com/KakaLopes/tcc-backend-jornada
+```
+
+Install dependencies
+
+```
 npm install
 ```
 
-### 3. Start project
+Configure `.env`
 
-```bash
-npx expo start
+```
+DATABASE_URL="mysql://user:password@localhost:3306/tcc_db"
+JWT_SECRET="secret"
+```
+
+Run Prisma
+
+```
+npx prisma migrate dev
+```
+
+Start server
+
+```
+node index.js
+```
+
+Server:
+
+```
+http://localhost:3000
 ```
 
 ---
 
-## 🌐 API Configuration
+# 🌐 Live Backend
 
-Edit:
-
-```js
-services/api.js
 ```
-
-### Local:
-
-```js
-baseURL: "http://YOUR_IP:3000"
-```
-
-### Production:
-
-```js
-baseURL: "https://your-backend-url.com"
+https://tcc-backend-jornada-production.up.railway.app
 ```
 
 ---
 
-## 🔐 Roles
+# 📱 Mobile Application
 
-### 👤 User
+This project also includes a mobile application built with **React Native (Expo)** featuring:
 
-* Clock in/out
-* Request leave
-* View personal data
+- Login  
+- Clock-in  
+- Clock-out  
+- Work hours tracking  
 
-### 🛠️ Admin
-
-* Manage employees
-* Approve requests
-* Generate reports
-* Export PDFs
+The app consumes this backend API.
 
 ---
 
-## 📌 Current Status
+# 👨‍🎓 Author
 
-The system currently includes:
-
-* attendance tracking
-* leave management
-* admin dashboard
-* employee management
-* report generation
-* PDF export system
-
-The application simulates a real business workflow and is ready for demonstration.
+Catalina Lopes  
+Software Engineering – Final Project (TCC)
 
 ---
 
-## 🚀 Future Improvements
+# 📚 Academic Purpose
 
-* Payroll calculation
-* Dashboard charts
-* Notifications system
-* Mobile employee creation
-* UI enhancements
+This project demonstrates knowledge in:
 
----
-
-## 👩‍💻 Author
-
-Developed by **Catalina Lopes**
-Final Year Project — Software Engineering
+- REST API development  
+- JWT authentication  
+- Backend architecture  
+- ORM usage (Prisma)  
+- Access control  
+- Audit logging  
+- Version control with Git & GitHub
