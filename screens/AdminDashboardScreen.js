@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView, Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { BarChart } from "react-native-chart-kit";
 import api from "../services/api";
+
+const screenWidth = Dimensions.get("window").width;
 
 export default function AdminDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState([]);
   const [report, setReport] = useState([]);
+const [dailyHours, setDailyHours] = useState([]);
   const [weekStart, setWeekStart] = useState("");
   const [weekEnd, setWeekEnd] = useState("");
   const router = useRouter();
@@ -54,6 +51,11 @@ export default function AdminDashboardScreen() {
 
       setEmployees(usersData);
       setReport(reportData);
+      setDailyHours(
+  Array.isArray(reportResponse.data?.daily_hours)
+    ? reportResponse.data.daily_hours
+    : []
+);
       setWeekStart(reportResponse.data?.week_start || "");
       setWeekEnd(reportResponse.data?.week_end || "");
     } catch (error) {
@@ -79,17 +81,54 @@ export default function AdminDashboardScreen() {
     return report.reduce((sum, item) => sum + (item.total_hours || 0), 0);
   }
 
-  const totalEmployees = employees.length;
-  const activeEmployees = employees.filter((employee) => employee.active !== false).length;
-  const inactiveEmployees = employees.filter((employee) => employee.active === false).length;
-  const cashInHandEmployees = employees.filter((employee) => isCashInHand(employee)).length;
-  const totalHoursThisWeek = getTotalHours();
-
   function formatHours(totalHours) {
     const h = Math.floor(totalHours || 0);
     const m = Math.round(((totalHours || 0) - h) * 60);
     return `${h}h ${m}min`;
   }
+
+function getChartDataFromReport() {
+  const orderedDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const hoursMap = {
+    Mon: 0,
+    Tue: 0,
+    Wed: 0,
+    Thu: 0,
+    Fri: 0,
+    Sat: 0,
+    Sun: 0,
+  };
+
+  dailyHours.forEach((item) => {
+    if (hoursMap[item.day] !== undefined) {
+      hoursMap[item.day] = Number(item.total_hours || 0);
+    }
+  });
+
+  return {
+    labels: orderedDays,
+    datasets: [
+      {
+        data: orderedDays.map((day) => hoursMap[day]),
+      },
+    ],
+  };
+}
+
+  const totalEmployees = employees.length;
+  const activeEmployees = employees.filter(
+    (employee) => employee.active !== false
+  ).length;
+  const inactiveEmployees = employees.filter(
+    (employee) => employee.active === false
+  ).length;
+  const cashInHandEmployees = employees.filter((employee) =>
+    isCashInHand(employee)
+  ).length;
+  const totalHoursThisWeek = getTotalHours();
+
+  const chartData = getChartDataFromReport();
 
   if (loading) {
     return (
@@ -114,7 +153,9 @@ export default function AdminDashboardScreen() {
         <Text style={styles.cardTitle}>Employees</Text>
         <Text style={styles.metric}>Total employees: {totalEmployees}</Text>
         <Text style={styles.metric}>Active employees: {activeEmployees}</Text>
-        <Text style={styles.metric}>Inactive employees: {inactiveEmployees}</Text>
+        <Text style={styles.metric}>
+          Inactive employees: {inactiveEmployees}
+        </Text>
         <Text style={styles.metric}>Cash in hand: {cashInHandEmployees}</Text>
       </View>
 
@@ -123,6 +164,33 @@ export default function AdminDashboardScreen() {
         <Text style={styles.metric}>
           Total hours this week: {formatHours(totalHoursThisWeek)}
         </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Weekly Hours Chart</Text>
+
+        <BarChart
+          data={chartData}
+          width={screenWidth - 72}
+          height={220}
+          yAxisSuffix="h"
+          fromZero
+          chartConfig={{
+            backgroundColor: "#ffffff",
+            backgroundGradientFrom: "#ffffff",
+            backgroundGradientTo: "#ffffff",
+            decimalPlaces: 2,
+            color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
+            labelColor: () => "#6b7280",
+            style: {
+              borderRadius: 16,
+            },
+          }}
+          style={{
+            marginTop: 8,
+            borderRadius: 16,
+          }}
+        />
       </View>
 
       <TouchableOpacity style={styles.refreshButton} onPress={loadDashboard}>

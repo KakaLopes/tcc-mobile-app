@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Linking,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
-
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 export default function AdminLeaveRequestsScreen() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +73,66 @@ export default function AdminLeaveRequestsScreen() {
     }
   }
 
+async function handleViewDocument(item) {
+  try {
+    if (!item?.attachment_url) {
+      Alert.alert("Info", "No document available for this request.");
+      return;
+    }
+
+    const fileName = item.attachment_name || "medical-certificate.pdf";
+    const safeFileName = fileName.endsWith(".pdf")
+      ? fileName
+      : `${fileName}.pdf`;
+
+    const localUri = `${FileSystem.cacheDirectory}${safeFileName}`;
+
+    console.log("DOWNLOAD URL:", item.attachment_url);
+    console.log("LOCAL URI:", localUri);
+
+    const downloadResult = await FileSystem.downloadAsync(
+      item.attachment_url,
+      localUri
+    );
+
+    console.log("DOWNLOAD RESULT:", downloadResult);
+
+    if (downloadResult.status !== 200) {
+      Alert.alert(
+        "Error",
+        `Unable to download document. Status: ${downloadResult.status}`
+      );
+      return;
+    }
+
+    const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
+    console.log("DOWNLOADED FILE INFO:", fileInfo);
+
+    if (!fileInfo.exists) {
+      Alert.alert("Error", "Downloaded file not found on device.");
+      return;
+    }
+
+    const sharingAvailable = await Sharing.isAvailableAsync();
+
+    if (!sharingAvailable) {
+      Alert.alert("Error", "Sharing is not available on this device.");
+      return;
+    }
+
+    await Sharing.shareAsync(downloadResult.uri, {
+      mimeType: "application/pdf",
+      dialogTitle: "Open medical certificate",
+      UTI: "com.adobe.pdf",
+    });
+  } catch (error) {
+    console.log("OPEN DOCUMENT ERROR:", error);
+    Alert.alert(
+      "Error",
+      error?.message || "Unable to download document."
+    );
+  }
+}
   function formatDate(date) {
     const d = new Date(date);
     const day = String(d.getDate()).padStart(2, "0");
@@ -102,7 +156,22 @@ export default function AdminLeaveRequestsScreen() {
     return styles.statusPending;
   }
 
+  function formatLeaveType(type) {
+    if (!type) return "-";
+
+    return type
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  function hasAttachment(item) {
+    return !!item.attachment_name;
+  }
+
   function renderItem({ item }) {
+    const showMedicalCertificate =
+      item.leave_type === "sick_leave" && hasAttachment(item);
+
     return (
       <View style={styles.card}>
         <Text style={styles.name}>
@@ -110,7 +179,7 @@ export default function AdminLeaveRequestsScreen() {
         </Text>
         <Text style={styles.email}>{item.user?.email || "-"}</Text>
 
-        <Text style={styles.info}>Type: {item.leave_type}</Text>
+        <Text style={styles.info}>Type: {formatLeaveType(item.leave_type)}</Text>
         <Text style={styles.info}>Start: {formatDate(item.start_date)}</Text>
         <Text style={styles.info}>End: {formatDate(item.end_date)}</Text>
         <Text style={styles.info}>
@@ -118,8 +187,29 @@ export default function AdminLeaveRequestsScreen() {
         </Text>
         <Text style={styles.info}>Reason: {item.reason || "-"}</Text>
 
+        {showMedicalCertificate && (
+          <View style={styles.attachmentBox}>
+            <Text style={styles.attachmentTitle}>
+              Medical certificate attached
+            </Text>
+            <Text style={styles.attachmentInfo}>
+              File: {item.attachment_name}
+            </Text>
+            <Text style={styles.attachmentInfo}>
+              Type: {item.attachment_type || "Unknown"}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.viewDocumentButton}
+              onPress={() => handleViewDocument(item)}
+            >
+              <Text style={styles.viewDocumentText}>View document</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <Text style={[styles.status, renderStatus(item.status)]}>
-          Status: {item.status}
+          Status: {formatLeaveType(item.status)}
         </Text>
 
         {item.status === "pending" && (
@@ -217,6 +307,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#374151",
     marginBottom: 4,
+  },
+  attachmentBox: {
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  attachmentTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#1d4ed8",
+    marginBottom: 6,
+  },
+  attachmentInfo: {
+    fontSize: 14,
+    color: "#374151",
+    marginBottom: 2,
+  },
+  viewDocumentButton: {
+    backgroundColor: "#2563eb",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  viewDocumentText: {
+    color: "#ffffff",
+    textAlign: "center",
+    fontWeight: "600",
   },
   status: {
     marginTop: 10,

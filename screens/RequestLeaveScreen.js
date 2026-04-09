@@ -1,15 +1,10 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import api from "../services/api";
 
 export default function RequestLeaveScreen() {
@@ -19,6 +14,7 @@ export default function RequestLeaveScreen() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [attachment, setAttachment] = useState(null);
   const [loading, setLoading] = useState(false);
 
   function formatDateInput(value) {
@@ -31,11 +27,41 @@ export default function RequestLeaveScreen() {
 
   function convertToApiDate(dateStr) {
     const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-
     if (!match) return null;
 
     const [, day, month, year] = match;
     return `${year}-${month}-${day}`;
+  }
+
+  async function pickDocument() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) return;
+
+      const file = result.assets?.[0];
+      if (!file) {
+        Alert.alert("Error", "No file selected.");
+        return;
+      }
+
+      setAttachment({
+        name: file.name,
+        uri: file.uri,
+        mimeType: file.mimeType || "application/pdf",
+      });
+    } catch (error) {
+      console.log("DOCUMENT PICKER ERROR:", error);
+      Alert.alert("Error", "Unable to select document");
+    }
+  }
+
+  function clearAttachment() {
+    setAttachment(null);
   }
 
   async function handleSubmit() {
@@ -61,6 +87,14 @@ export default function RequestLeaveScreen() {
         return;
       }
 
+      if (leaveType === "sick_leave" && !attachment) {
+        Alert.alert(
+          "Error",
+          "Please upload a medical certificate for Sick Leave."
+        );
+        return;
+      }
+
       setLoading(true);
 
       const token = await AsyncStorage.getItem("token");
@@ -70,32 +104,61 @@ export default function RequestLeaveScreen() {
         return;
       }
 
-      await api.post(
-        "/leave",
-        {
-          leave_type: leaveType,
-          start_date: apiStartDate,
-          end_date: apiEndDate,
-          reason,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+      let uploadedFile = null;
+
+      if (attachment) {
+        const base64 = await FileSystem.readAsStringAsync(attachment.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        console.log("BASE64 READY:", !!base64);
+
+        const uploadResponse = await api.post(
+          "/upload/base64",
+          {
+            fileName: attachment.name,
+            mimeType: attachment.mimeType || "application/pdf",
+            base64: base64,
           },
-        }
-      );
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log("UPLOAD RESPONSE:", uploadResponse.data);
+        uploadedFile = uploadResponse.data;
+      }
+
+      const payload = {
+        leave_type: leaveType,
+        start_date: apiStartDate,
+        end_date: apiEndDate,
+        reason,
+        attachment_name: uploadedFile?.original_name || null,
+        attachment_url: uploadedFile?.url || null,
+        attachment_type: uploadedFile?.type || null,
+      };
+
+      console.log("LEAVE PAYLOAD:", payload);
+
+      await api.post("/leave", payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       Alert.alert("Success", "Leave request submitted successfully.");
       router.back();
     } catch (error) {
-      console.log(
-        "REQUEST LEAVE ERROR:",
-        error?.response?.data || error.message
-      );
+      console.log("REQUEST LEAVE FULL ERROR:", error);
+      console.log("REQUEST LEAVE RESPONSE:", error?.response?.data);
+      console.log("REQUEST LEAVE MESSAGE:", error?.message);
 
       Alert.alert(
         "Error",
-        error?.response?.data?.error || "Unable to submit leave request"
+        error?.response?.data?.error || error?.message || "Unable to submit leave request"
       );
     } finally {
       setLoading(false);
@@ -150,6 +213,35 @@ export default function RequestLeaveScreen() {
         <Text style={getOptionTextStyle("other")}>Other</Text>
       </TouchableOpacity>
 
+      {leaveType === "sick_leave" && (
+        <>
+          <Text style={styles.label}>Medical certificate</Text>
+
+          <TouchableOpacity style={styles.uploadButton} onPress={pickDocument}>
+            <Text style={styles.uploadButtonText}>
+              {attachment ? "Change Document" : "Upload Medical Certificate"}
+            </Text>
+          </TouchableOpacity>
+
+          {attachment && (
+            <View style={styles.attachmentCard}>
+              <Text style={styles.attachmentTitle}>Selected file</Text>
+              <Text style={styles.attachmentName}>{attachment.name}</Text>
+              <Text style={styles.attachmentType}>
+                {attachment.mimeType || "Unknown file type"}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.removeAttachmentButton}
+                onPress={clearAttachment}
+              >
+                <Text style={styles.removeAttachmentText}>Remove file</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </>
+      )}
+
       <Text style={styles.label}>Start date</Text>
       <TextInput
         placeholder="DD/MM/YYYY"
@@ -191,14 +283,6 @@ export default function RequestLeaveScreen() {
         <Text style={styles.submitButtonText}>
           {loading ? "Submitting..." : "Submit Request"}
         </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        disabled={loading}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -246,11 +330,57 @@ const styles = StyleSheet.create({
     color: "#111827",
     textAlign: "center",
     fontWeight: "600",
+    fontSize: 16,
   },
   optionActiveText: {
     color: "#2563eb",
     textAlign: "center",
     fontWeight: "bold",
+    fontSize: 16,
+  },
+  uploadButton: {
+    backgroundColor: "#7c3aed",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  uploadButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  attachmentCard: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#ddd6fe",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 14,
+  },
+  attachmentTitle: {
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 6,
+  },
+  attachmentName: {
+    color: "#374151",
+    marginBottom: 4,
+  },
+  attachmentType: {
+    color: "#6b7280",
+    fontSize: 13,
+    marginBottom: 10,
+  },
+  removeAttachmentButton: {
+    backgroundColor: "#fef2f2",
+    padding: 10,
+    borderRadius: 8,
+  },
+  removeAttachmentText: {
+    color: "#dc2626",
+    textAlign: "center",
+    fontWeight: "600",
   },
   input: {
     borderWidth: 1,
@@ -277,19 +407,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
-    fontSize: 16,
-  },
-  backButton: {
-    backgroundColor: "#ffffff",
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-  },
-  backButtonText: {
-    color: "#111827",
-    textAlign: "center",
-    fontWeight: "600",
     fontSize: 16,
   },
   disabledButton: {
