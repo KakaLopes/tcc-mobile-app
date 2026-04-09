@@ -1,73 +1,70 @@
-# ⏱ Work Time Management System
+# 📱 Work Time Management System – Mobile App
 
-This project was developed as part of a **Final Year Project (TCC)** for the **Software Engineering** course.
+This mobile application was developed as part of a Final Year Project for the Software Engineering course.
 
-The system allows users to register and manage their working hours, including clock-in/out, time adjustments, administrative reports, and action auditing.
+It is designed for employees and administrators of cafés and small businesses to manage working hours, track attendance, and handle leave requests directly from their mobile devices.
 
-The backend was built using **Node.js**, **Express**, **Prisma ORM**, and **MySQL**, following a **REST API architecture**.
+The app communicates with a Node.js backend API and provides a simple, intuitive interface for daily use.
 
 ---
 
 # 🚀 Technologies Used
 
-- Node.js  
-- Express  
-- Prisma ORM  
-- MySQL  
-- JWT (JSON Web Token)  
-- bcrypt  
-- Thunder Client  
-- Git & GitHub  
-- React Native (Expo)  
+- React Native  
+- Expo  
+- Axios  
+- AsyncStorage  
+- Expo Router  
+- Expo Document Picker  
+- Expo File System  
+- Expo Linking  
+- JavaScript (ES6+)  
 
 ---
 
-# 🏗 System Architecture
+# 🏗 Application Architecture
 
-The backend follows a **REST API architecture**, organized into layers:
+The mobile app follows a **component-based architecture**:
 
-- Controllers – business logic  
-- Routes – API endpoints  
-- Middlewares – authentication and authorization  
-- Prisma ORM – database access  
-- MySQL – data storage  
-
-Authentication is handled using **JWT (JSON Web Token)**.
+- Screens – UI and user interaction  
+- Services – API communication  
+- State management – React hooks (useState, useEffect)  
+- Navigation – Expo Router  
+- Storage – AsyncStorage (JWT token)  
 
 ---
 
 # 📂 Project Structure
 
 ```
-backend
+mobile
 │
-├── controllers
-│   ├── adminController.js
-│   ├── authController.js
-│   ├── adjustmentController.js
-│   ├── reportController.js
-│   └── timeEntryController.js
+├── app
+│   ├── login.js
+│   ├── home.js
+│   ├── requestLeave.js
+│   ├── adminLeaveRequests.js
+│   └── reports.js
 │
-├── routes
-│   ├── adminRoutes.js
-│   ├── reportRoutes.js
-│   └── userRoutes.js
+├── services
+│   └── api.js
 │
-├── middlewares
-│   └── auth.js
+├── assets
 │
-├── prisma
-│   └── schema.prisma
+├── components
 │
-├── index.js
-└── package.json
+├── package.json
+└── app.json
 ```
 
 ---
 
 # 🔐 Authentication
 
-After login, the token must be sent in the request header:
+- User logs in using email and password  
+- Backend returns a JWT token  
+- Token is stored locally using AsyncStorage  
+- Token is sent in all protected requests  
 
 ```
 Authorization: Bearer TOKEN
@@ -75,159 +72,81 @@ Authorization: Bearer TOKEN
 
 ---
 
-# 👤 Users
-
-## Create User
-
-POST `/users`
-
-```json
-{
-  "full_name": "Maria Silva",
-  "email": "silva@email.com",
-  "password": "123456"
-}
-```
-
----
+# ⏱ Main Features
 
 ## Login
 
-POST `/login`
-
-```json
-{
-  "email": "silva@email.com",
-  "password": "123456"
-}
-```
+- Secure authentication using JWT  
+- Error handling for invalid credentials  
 
 ---
 
-# ⏱ Work Time Management
+## Clock-in / Clock-out
 
-Clock-in
-
-```
-POST /clock-in
-```
-
-Clock-out
-
-```
-POST /clock-out
-```
-
-View work history
-
-```
-GET /my-entries
-```
+- Register working hours in real time  
+- Prevent duplicate clock-in  
+- Automatic duration calculation  
 
 ---
 
-# 📝 Time Adjustments
+## Work Tracking
 
-Request adjustment
-
-```
-POST /adjustments/request
-```
-
-```json
-{
-  "work_entry_id": "ENTRY_ID",
-  "old_value": "2026-03-10T08:11:00.000Z",
-  "new_value": "2026-03-10T08:10:00.000Z",
-  "reason": "Forgot to clock in"
-}
-```
+- View hours worked today  
+- View weekly work summary  
+- Access work history  
 
 ---
 
-# 👨‍💼 Admin Features
+## 🏖 Leave Requests
 
-Dashboard
+- Request different types of leave:
+  - Vacation  
+  - Day Off  
+  - Sick Leave  
+  - Other  
 
-```
-GET /admin/dashboard
-```
-
-Approve adjustment
-
-```
-POST /admin/adjustments/:id/approve
-```
-
-Reject adjustment
-
-```
-POST /admin/adjustments/:id/reject
-```
+- Validate dates and inputs  
+- Prevent invalid submissions  
 
 ---
 
-# 📊 Reports
+## 📎 Document Upload (Sick Leave)
 
-Hours today
+- Upload medical certificate (PDF or image)  
+- Convert file to Base64  
+- Send to backend (Cloudinary storage)  
+- Attach document to leave request  
+
+---
+
+## 👨‍💼 Admin Features
+
+- View all leave requests  
+- Approve or reject requests  
+- View employee information  
+- Open uploaded documents  
+
+---
+
+# 🌐 API Configuration
+
+Base URL is configured in:
 
 ```
-GET /admin/reports/hours-today
-```
-
-Weekly hours
-
-```
-GET /admin/reports/hours-week
-```
-
-Hours by date range
-
-```
-GET /admin/reports/hours-range
+services/api.js
 ```
 
 Example:
 
-```
-/admin/reports/hours-range?start=2026-03-01&end=2026-03-10
-```
-
----
-
-# 🧾 Audit Logs
-
-```
-GET /admin/audit-logs
+```js
+const api = axios.create({
+  baseURL: "http://192.168.0.9:3000"
+});
 ```
 
 ---
 
-# ❤️ Health Check
-
-```
-GET /admin/health
-```
-
-Response:
-
-```json
-{
-  "status": "ok",
-  "server": "online",
-  "database": "connected"
-}
-```
-
----
-
-# ▶️ How to Run the Project
-
-Clone the repository
-
-```
-git clone https://github.com/KakaLopes/tcc-backend-jornada
-```
+# ▶️ How to Run the App
 
 Install dependencies
 
@@ -235,51 +154,45 @@ Install dependencies
 npm install
 ```
 
-Configure `.env`
+Start Expo
 
 ```
-DATABASE_URL="mysql://user:password@localhost:3306/tcc_db"
-JWT_SECRET="secret"
+npx expo start
 ```
 
-Run Prisma
+Run on device
 
-```
-npx prisma migrate dev
-```
-
-Start server
-
-```
-node index.js
-```
-
-Server:
-
-```
-http://localhost:3000
-```
+- Scan QR code with Expo Go  
+- Or run on emulator  
 
 ---
 
-# 🌐 Live Backend
+# ⚠️ Important Notes
+
+- The mobile app requires the backend to be running  
+- Make sure the IP address is correct (same Wi-Fi network)  
+- File upload requires backend + Cloudinary configured  
+- Ensure permissions for file access are enabled  
+
+---
+
+# 🔮 Future Improvements
+
+- Push notifications (leave approval)  
+- GPS validation for clock-in  
+- Offline mode support  
+- Dark mode  
+- In-app PDF preview  
+
+---
+
+# 🌐 Backend API
+
+This mobile app consumes the backend:
 
 ```
 https://tcc-backend-jornada-production.up.railway.app
 ```
-
----
-
-# 📱 Mobile Application
-
-This project also includes a mobile application built with **React Native (Expo)** featuring:
-
-- Login  
-- Clock-in  
-- Clock-out  
-- Work hours tracking  
-
-The app consumes this backend API.
 
 ---
 
@@ -294,10 +207,10 @@ Software Engineering – Final Project (TCC)
 
 This project demonstrates knowledge in:
 
-- REST API development  
-- JWT authentication  
-- Backend architecture  
-- ORM usage (Prisma)  
-- Access control  
-- Audit logging  
-- Version control with Git & GitHub
+- Mobile development with React Native  
+- API integration (REST)  
+- Authentication using JWT  
+- File upload handling  
+- State management with React Hooks  
+- Real-world system design  
+- Full-stack development
