@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+
 import api from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,17 +38,25 @@ export default function LoginScreen() {
       }
 
       if (response.data?.user) {
-        await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
+        await AsyncStorage.setItem(
+          "user",
+          JSON.stringify(response.data.user)
+        );
       }
 
       Alert.alert("Success", "Login successful");
+
       router.replace("/");
     } catch (error) {
-      console.log("LOGIN ERROR:", error?.response?.data || error.message);
+      console.log(
+        "LOGIN ERROR:",
+        error?.response?.data || error.message
+      );
 
       Alert.alert(
         "Error",
-        error?.response?.data?.error || "Invalid email or password"
+        error?.response?.data?.error ||
+          "Invalid email or password"
       );
     } finally {
       setLoading(false);
@@ -55,8 +65,13 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome User 👋</Text>
-      <Text style={styles.subtitle}>Sign in to continue</Text>
+      <Text style={styles.appName}>WorkTime</Text>
+
+      <Text style={styles.title}>Welcome Back 👋</Text>
+
+      <Text style={styles.subtitle}>
+        Sign in to continue
+      </Text>
 
       <TextInput
         placeholder="Email"
@@ -70,7 +85,7 @@ export default function LoginScreen() {
 
       <TextInput
         placeholder="Password"
-        placeholderTextColor="#9ca3af"git
+        placeholderTextColor="#9ca3af"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -79,25 +94,32 @@ export default function LoginScreen() {
         style={styles.input}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogin}
+      >
         <Text style={styles.buttonText}>
           {loading ? "Signing in..." : "Login"}
         </Text>
       </TouchableOpacity>
-<TouchableOpacity
-  style={styles.forgotPasswordButton}
-  onPress={() => router.push("/forgot-password")}
->
-  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-</TouchableOpacity>
+
       <TouchableOpacity
-  onPress={() => router.push("/register")}
-  style={styles.registerLinkContainer}
->
-  <Text style={styles.registerLinkText}>
-    Don't have an account? Create one
-  </Text>
-</TouchableOpacity>
+        style={styles.forgotPasswordButton}
+        onPress={() => router.push("/forgot-password")}
+      >
+        <Text style={styles.forgotPasswordText}>
+          Forgot password?
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.push("/register")}
+        style={styles.registerLinkContainer}
+      >
+        <Text style={styles.registerLinkText}>
+          Don't have an account? Create one
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -109,19 +131,30 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f5f7fb",
   },
+
+  appName: {
+    fontSize: 36,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#2563eb",
+    marginBottom: 10,
+  },
+
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "bold",
     textAlign: "center",
     color: "#111827",
     marginBottom: 8,
   },
+
   subtitle: {
     fontSize: 16,
     textAlign: "center",
     color: "#6b7280",
     marginBottom: 30,
   },
+
   input: {
     borderWidth: 1,
     borderColor: "#d1d5db",
@@ -132,42 +165,45 @@ const styles = StyleSheet.create({
     color: "#111827",
     fontSize: 16,
   },
+
   button: {
     backgroundColor: "#2563eb",
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     marginTop: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
+
   buttonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
   },
-  registerLinkContainer: {
-  marginTop: 20,
-  alignItems: "center",
-},
-forgotPasswordButton: {
-  marginTop: 12,
-  marginBottom: 8,
-},
 
-forgotPasswordText: {
-  textAlign: "center",
-  color: "#2563eb",
-  fontWeight: "600",
-  fontSize: 15,
-},
-registerLinkText: {
-  color: "red",
-  fontSize: 16,
-  fontWeight: "bold",
-},
-  linkText: {
-    marginTop: 16,
+  forgotPasswordButton: {
+    marginTop: 14,
+    marginBottom: 10,
+  },
+
+  forgotPasswordText: {
     textAlign: "center",
     color: "#2563eb",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+
+  registerLinkContainer: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+
+  registerLinkText: {
+    color: "#2563eb",
+    fontSize: 15,
     fontWeight: "600",
   },
 });
