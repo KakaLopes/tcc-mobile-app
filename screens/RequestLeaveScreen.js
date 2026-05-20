@@ -453,21 +453,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  backButton: {
-    backgroundColor: "#ffffff",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-  },
+ backButton: {
+  backgroundColor: "#ffffff",
+  paddingVertical: 14,
+  borderRadius: 12,
+  marginBottom: 20,
+  alignItems: "center",
+},
 
-  backButtonText: {
-    color: "#111827",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+ backButtonText: {
+  color: "#111827",
+  fontWeight: "bold",
+  fontSize: 16,
+},
 
   disabledButton: {
     opacity: 0.7,
