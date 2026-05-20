@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -21,7 +28,10 @@ export default function RequestLeaveScreen() {
     const numbers = value.replace(/\D/g, "").slice(0, 8);
 
     if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 4) return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    if (numbers.length <= 4) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    }
+
     return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
   }
 
@@ -44,6 +54,7 @@ export default function RequestLeaveScreen() {
       if (result.canceled) return;
 
       const file = result.assets?.[0];
+
       if (!file) {
         Alert.alert("Error", "No file selected.");
         return;
@@ -150,7 +161,7 @@ export default function RequestLeaveScreen() {
       });
 
       Alert.alert("Success", "Leave request submitted successfully.");
-      router.back();
+      router.replace("/");
     } catch (error) {
       console.log("REQUEST LEAVE FULL ERROR:", error);
       console.log("REQUEST LEAVE RESPONSE:", error?.response?.data);
@@ -158,7 +169,9 @@ export default function RequestLeaveScreen() {
 
       Alert.alert(
         "Error",
-        error?.response?.data?.error || error?.message || "Unable to submit leave request"
+        error?.response?.data?.error ||
+          error?.message ||
+          "Unable to submit leave request"
       );
     } finally {
       setLoading(false);
@@ -179,6 +192,7 @@ export default function RequestLeaveScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Request Leave</Text>
+
       <Text style={styles.subtitle}>
         Vacation, day off, sick leave or other
       </Text>
@@ -243,6 +257,7 @@ export default function RequestLeaveScreen() {
       )}
 
       <Text style={styles.label}>Start date</Text>
+
       <TextInput
         placeholder="DD/MM/YYYY"
         placeholderTextColor="#9ca3af"
@@ -254,6 +269,7 @@ export default function RequestLeaveScreen() {
       />
 
       <Text style={styles.label}>End date</Text>
+
       <TextInput
         placeholder="DD/MM/YYYY"
         placeholderTextColor="#9ca3af"
@@ -265,6 +281,7 @@ export default function RequestLeaveScreen() {
       />
 
       <Text style={styles.label}>Reason</Text>
+
       <TextInput
         placeholder="Optional reason"
         placeholderTextColor="#9ca3af"
@@ -284,6 +301,13 @@ export default function RequestLeaveScreen() {
           {loading ? "Submitting..." : "Submit Request"}
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.replace("/")}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -295,6 +319,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f7fb",
     justifyContent: "center",
   },
+
   title: {
     fontSize: 28,
     fontWeight: "bold",
@@ -302,18 +327,21 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 8,
   },
+
   subtitle: {
     fontSize: 15,
     textAlign: "center",
     color: "#6b7280",
     marginBottom: 24,
   },
+
   label: {
     fontSize: 14,
     color: "#374151",
     marginBottom: 8,
     fontWeight: "600",
   },
+
   optionButton: {
     backgroundColor: "#ffffff",
     padding: 14,
@@ -322,34 +350,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#d1d5db",
   },
+
   optionButtonActive: {
     borderColor: "#2563eb",
     backgroundColor: "#eff6ff",
   },
+
   optionText: {
     color: "#111827",
     textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
   },
+
   optionActiveText: {
     color: "#2563eb",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
   },
+
   uploadButton: {
     backgroundColor: "#7c3aed",
     padding: 14,
     borderRadius: 10,
     marginBottom: 12,
   },
+
   uploadButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 15,
   },
+
   attachmentCard: {
     backgroundColor: "#ffffff",
     borderWidth: 1,
@@ -358,30 +392,36 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 14,
   },
+
   attachmentTitle: {
     fontWeight: "bold",
     color: "#111827",
     marginBottom: 6,
   },
+
   attachmentName: {
     color: "#374151",
     marginBottom: 4,
   },
+
   attachmentType: {
     color: "#6b7280",
     fontSize: 13,
     marginBottom: 10,
   },
+
   removeAttachmentButton: {
     backgroundColor: "#fef2f2",
     padding: 10,
     borderRadius: 8,
   },
+
   removeAttachmentText: {
     color: "#dc2626",
     textAlign: "center",
     fontWeight: "600",
   },
+
   input: {
     borderWidth: 1,
     borderColor: "#d1d5db",
@@ -392,23 +432,43 @@ const styles = StyleSheet.create({
     color: "#111827",
     fontSize: 16,
   },
+
   textArea: {
     minHeight: 110,
     textAlignVertical: "top",
   },
+
   submitButton: {
     backgroundColor: "#2563eb",
     padding: 14,
     borderRadius: 10,
     marginTop: 6,
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   submitButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
   },
+
+  backButton: {
+    backgroundColor: "#ffffff",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+
+  backButtonText: {
+    color: "#111827",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
   disabledButton: {
     opacity: 0.7,
   },
