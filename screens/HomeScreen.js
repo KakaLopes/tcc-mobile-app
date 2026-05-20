@@ -221,7 +221,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Time Tracker</Text>
+      <Text style={styles.title}>WorkTime</Text>
 
       <Text style={styles.welcome}>
         Welcome, {user?.full_name || "User"} 👋
@@ -231,29 +231,29 @@ export default function HomeScreen() {
         <Text style={styles.infoTitle}>Daily Summary</Text>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Hours today</Text>
+          <Text style={styles.infoLabel}>Hours today:</Text>
           <Text style={styles.infoValue}>{hoursToday}h</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Total entries</Text>
+          <Text style={styles.infoLabel}>Total entries:</Text>
           <Text style={styles.infoValue}>{entriesCount}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Shift status</Text>
+          <Text style={styles.infoLabel}>Shift status:</Text>
           <Text style={openEntry ? styles.statusOpen : styles.statusClosed}>
             {openEntry ? "Working..." : "No active shift"}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Annual leave</Text>
+          <Text style={styles.infoLabel}>Annual leave:</Text>
           <Text style={styles.infoValue}>{annualLeaveDays} days</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Leave balance</Text>
+          <Text style={styles.infoLabel}>Leave balance:</Text>
           <Text style={styles.infoValue}>{leaveBalance} days</Text>
         </View>
       </View>
@@ -295,17 +295,17 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {user?.role === "admin" && (
-  <>
-    <Text style={styles.sectionTitle}>Admin Tools</Text>
+        <>
+          <Text style={styles.sectionTitle}>Admin Tools</Text>
 
-    <TouchableOpacity
-      style={styles.adminButton}
-      onPress={() => router.push("/admin-panel")}
-    >
-      <Text style={styles.adminButtonText}>Admin Panel</Text>
-    </TouchableOpacity>
-  </>
-)}
+          <TouchableOpacity
+            style={styles.adminButton}
+            onPress={() => router.push("/admin-panel")}
+          >
+            <Text style={styles.adminButtonText}>Admin Panel</Text>
+          </TouchableOpacity>
+        </>
+      )}
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
@@ -319,138 +319,165 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: "#f5f7fb",
     padding: 20,
-    justifyContent: "center",
+    paddingTop: 45,
   },
+
   title: {
     fontSize: 34,
     fontWeight: "bold",
     textAlign: "center",
     color: "#111827",
-    marginBottom: 10,
+    marginBottom: 6,
   },
+
   welcome: {
-    fontSize: 18,
+    fontSize: 17,
     textAlign: "center",
     color: "#374151",
-    marginBottom: 24,
+    marginBottom: 18,
   },
+
   infoCard: {
     backgroundColor: "#ffffff",
     padding: 18,
-    borderRadius: 14,
-    marginBottom: 24,
+    borderRadius: 18,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
+
   infoTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#111827",
     marginBottom: 14,
   },
+
   infoRow: {
-    marginBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 9,
   },
+
   infoLabel: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#6b7280",
-    marginBottom: 2,
   },
+
   infoValue: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: "#111827",
+    textAlign: "right",
   },
+
   statusOpen: {
-    fontSize: 17,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
     color: "#d97706",
+    textAlign: "right",
   },
+
   statusClosed: {
-    fontSize: 17,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
     color: "#15803d",
+    textAlign: "right",
   },
+
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#374151",
-    marginBottom: 10,
+    marginBottom: 8,
     marginTop: 4,
   },
+
   primaryButton: {
     backgroundColor: "#2563eb",
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   primaryButtonText: {
-    color: "#fff",
+    color: "#ffffff",
     textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
   },
+
   secondaryButton: {
     backgroundColor: "#ffffff",
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 12,
-    marginBottom: 18,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: "#d1d5db",
   },
+
   secondaryButtonText: {
     color: "#111827",
     textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
   },
+
   leaveButton: {
     backgroundColor: "#f59e0b",
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   leaveButtonText: {
-    color: "#fff",
+    color: "#ffffff",
     textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
   },
+
   myLeavesButton: {
     backgroundColor: "#0ea5e9",
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 12,
-    marginBottom: 18,
+    marginBottom: 16,
   },
+
   myLeavesButtonText: {
-    color: "#fff",
+    color: "#ffffff",
     textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
   },
+
   adminButton: {
     backgroundColor: "#7c3aed",
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
   },
+
   adminButtonText: {
-    color: "#fff",
+    color: "#ffffff",
     textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
   },
- 
+
   logoutButton: {
     backgroundColor: "#dc2626",
-    padding: 15,
+    paddingVertical: 12,
     borderRadius: 12,
     marginTop: 4,
+    marginBottom: 20,
   },
+
   logoutButtonText: {
-    color: "#fff",
+    color: "#ffffff",
     textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 17,
+    fontWeight: "700",
+    fontSize: 16,
   },
 });
