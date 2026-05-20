@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 10,
+    alignItems: "center",
     padding: 14,
   },
   backText: {
