@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -41,6 +42,30 @@ export default function RequestLeaveScreen() {
 
     const [, day, month, year] = match;
     return `${year}-${month}-${day}`;
+  }
+
+  async function getFileBase64(fileUri) {
+    if (Platform.OS === "web") {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onloadend = () => {
+          const result = reader.result || "";
+          const base64 = result.toString().split(",")[1];
+          resolve(base64);
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    return await FileSystem.readAsStringAsync(fileUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
   }
 
   async function pickDocument() {
@@ -112,15 +137,20 @@ export default function RequestLeaveScreen() {
 
       if (!token) {
         Alert.alert("Error", "Token not found. Please log in again.");
+        setLoading(false);
         return;
       }
 
       let uploadedFile = null;
 
       if (attachment) {
-        const base64 = await FileSystem.readAsStringAsync(attachment.uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const base64 = await getFileBase64(attachment.uri);
+
+        if (!base64) {
+          Alert.alert("Error", "Unable to read selected document.");
+          setLoading(false);
+          return;
+        }
 
         console.log("BASE64 READY:", !!base64);
 
@@ -453,20 +483,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-backButton: {
-  marginTop: 10,
-  marginBottom: 20,
-  padding: 14,
-  alignItems: "center",
-  justifyContent: "center",
-},
+  backButton: {
+    marginTop: 10,
+    marginBottom: 20,
+    padding: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-backText: {
-  textAlign: "center",
-  fontWeight: "600",
-  fontSize: 16,
-  color: "#111827",
-},
+  backButtonText: {
+    textAlign: "center",
+    fontWeight: "600",
+    fontSize: 16,
+    color: "#111827",
+  },
+
   disabledButton: {
     opacity: 0.7,
   },
