@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -16,12 +17,12 @@ import api from "../services/api";
 
 export default function AdminReportsScreen() {
   const [user, setUser] = useState(null);
-  const [report, setReport] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [weekStart, setWeekStart] = useState("");
   const [weekEnd, setWeekEnd] = useState("");
   const [loading, setLoading] = useState(true);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function AdminReportsScreen() {
   async function loadUser() {
     try {
       const savedUser = await AsyncStorage.getItem("user");
+
       if (savedUser) {
         setUser(JSON.parse(savedUser));
       }
@@ -78,11 +80,11 @@ export default function AdminReportsScreen() {
         ? reportResponse.data.data
         : [];
 
-      setReport(reportData);
       setWeekStart(reportResponse.data?.week_start || "");
       setWeekEnd(reportResponse.data?.week_end || "");
 
       const reportMap = {};
+
       reportData.forEach((item) => {
         if (item?.user?.id) {
           reportMap[item.user.id] = item.total_hours || 0;
@@ -110,6 +112,7 @@ export default function AdminReportsScreen() {
   function formatHours(totalHours) {
     const h = Math.floor(totalHours || 0);
     const m = Math.round(((totalHours || 0) - h) * 60);
+
     return `${h}h ${m}min`;
   }
 
@@ -126,6 +129,7 @@ export default function AdminReportsScreen() {
       if (prev.includes(employeeId)) {
         return prev.filter((id) => id !== employeeId);
       }
+
       return [...prev, employeeId];
     });
   }
@@ -137,6 +141,237 @@ export default function AdminReportsScreen() {
 
   function clearSelection() {
     setSelectedEmployees([]);
+  }
+
+  function printHtmlOnWeb(html) {
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      Alert.alert("Error", "Please allow pop-ups to print the report.");
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  }
+
+  function createOfficialReportHtml(selectedData) {
+    return `
+      <html>
+        <head>
+          <style>
+            @page {
+              size: A4;
+              margin: 20mm;
+            }
+
+            body {
+              font-family: Arial, sans-serif;
+              color: #111827;
+              padding: 0;
+              margin: 0;
+              font-size: 14px;
+            }
+
+            h1 {
+              margin-bottom: 8px;
+              font-size: 28px;
+            }
+
+            h2 {
+              color: #2563eb;
+              margin-top: 22px;
+              font-size: 22px;
+            }
+
+            p {
+              font-size: 14px;
+            }
+
+            .line {
+              margin: 20px 0;
+              border: none;
+              border-top: 1px solid #9ca3af;
+            }
+
+            .employee-card {
+              page-break-inside: avoid;
+              break-inside: avoid;
+              margin-bottom: 14px;
+              padding: 12px;
+              border: 1px solid #d1d5db;
+              border-radius: 8px;
+            }
+
+            .employee-name {
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+          </style>
+        </head>
+
+        <body>
+          <h1>Weekly Report</h1>
+
+          <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
+
+          <hr class="line" />
+
+          <h2>Official Payroll</h2>
+
+          <p>Employees included in the accountant report.</p>
+
+          ${selectedData
+            .map(
+              (item) => `
+                <div class="employee-card">
+                  <div class="employee-name">${item.full_name || "Employee"}</div>
+                  <div>${item.email || "-"}</div>
+                  <div>Payment type: ${item.payment_type || "Not defined"}</div>
+                  <div>Worked: ${formatHours(item.total_hours)}</div>
+                </div>
+              `
+            )
+            .join("")}
+        </body>
+      </html>
+    `;
+  }
+
+  function createInternalReportHtml(activeEmployees, cashPayments) {
+    return `
+      <html>
+        <head>
+          <style>
+            @page {
+              size: A4;
+              margin: 20mm;
+            }
+
+            body {
+              font-family: Arial, sans-serif;
+              color: #111827;
+              padding: 0;
+              margin: 0;
+              font-size: 14px;
+            }
+
+            h1 {
+              margin-bottom: 8px;
+              font-size: 28px;
+            }
+
+            h2 {
+              margin-top: 22px;
+              font-size: 22px;
+            }
+
+            p {
+              font-size: 14px;
+            }
+
+            .blue-title {
+              color: #2563eb;
+            }
+
+            .orange-title {
+              color: #b45309;
+            }
+
+            .line {
+              margin: 20px 0;
+              border: none;
+              border-top: 1px solid #9ca3af;
+            }
+
+            .employee-card {
+              page-break-inside: avoid;
+              break-inside: avoid;
+              margin-bottom: 14px;
+              padding: 12px;
+              border: 1px solid #d1d5db;
+              border-radius: 8px;
+            }
+
+            .cash-card {
+              border: 1px solid #f59e0b;
+              background-color: #fffbeb;
+            }
+
+            .employee-name {
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+          </style>
+        </head>
+
+        <body>
+          <h1>Internal Weekly Report</h1>
+
+          <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
+
+          <hr class="line" />
+
+          <h2 class="blue-title">Active Employees</h2>
+
+          ${
+            activeEmployees.length > 0
+              ? activeEmployees
+                  .map(
+                    (item) => `
+                      <div class="employee-card">
+                        <div class="employee-name">${item.full_name || "Employee"}</div>
+                        <div>${item.email || "-"}</div>
+                        <div>Payment type: ${item.payment_type || "Not defined"}</div>
+                        <div>Worked: ${formatHours(item.total_hours)}</div>
+                      </div>
+                    `
+                  )
+                  .join("")
+              : `<p>No active employees in this selection.</p>`
+          }
+
+          <hr class="line" />
+
+          <h2 class="orange-title">Cash in Hand</h2>
+
+          <p>Internal operational record for same-day or direct cash payments.</p>
+
+          ${
+            cashPayments.length > 0
+              ? cashPayments
+                  .map(
+                    (item) => `
+                      <div class="employee-card cash-card">
+                        <div class="employee-name">${item.full_name || "Employee"}</div>
+                        <div>${item.email || "-"}</div>
+                        <div>Payment type: ${item.payment_type || "cash_in_hand"}</div>
+                        <div>Worked: ${formatHours(item.total_hours)}</div>
+                      </div>
+                    `
+                  )
+                  .join("")
+              : `<p>No cash in hand employees in this selection.</p>`
+          }
+        </body>
+      </html>
+    `;
+  }
+
+  async function generatePdfOrPrint(html) {
+    if (Platform.OS === "web") {
+      printHtmlOnWeb(html);
+      return;
+    }
+
+    const file = await Print.printToFileAsync({ html });
+    await Sharing.shareAsync(file.uri);
   }
 
   async function handleExportPDF() {
@@ -156,37 +391,8 @@ export default function AdminReportsScreen() {
         return;
       }
 
-      const html = `
-        <html>
-          <body style="font-family: Arial; padding: 24px; color: #111827;">
-            <h1 style="margin-bottom: 8px;">Weekly Report</h1>
-            <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
-
-            <hr style="margin: 20px 0;" />
-
-            <h2 style="color: #2563eb;">Official Payroll</h2>
-            <p style="margin-top: 0;">
-              Employees included in the accountant report.
-            </p>
-
-            ${selectedData
-              .map(
-                (item) => `
-                  <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                    <strong>${item.full_name || "Employee"}</strong><br/>
-                    ${item.email || "-"}<br/>
-                    Payment type: ${item.payment_type || "Not defined"}<br/>
-                    Worked: ${formatHours(item.total_hours)}
-                  </div>
-                `
-              )
-              .join("")}
-          </body>
-        </html>
-      `;
-
-      const file = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(file.uri);
+      const html = createOfficialReportHtml(selectedData);
+      await generatePdfOrPrint(html);
     } catch (error) {
       console.log("PDF ERROR:", error);
       Alert.alert("Error", "Failed to generate PDF");
@@ -216,60 +422,8 @@ export default function AdminReportsScreen() {
           employee.payment_type === "cash_in_hand"
       );
 
-      const html = `
-        <html>
-          <body style="font-family: Arial; padding: 24px; color: #111827;">
-            <h1 style="margin-bottom: 8px;">Internal Weekly Report</h1>
-            <p><strong>Week:</strong> ${weekStart} to ${weekEnd}</p>
-
-            <hr style="margin: 20px 0;" />
-
-            <h2 style="color: #2563eb;">Active Employees</h2>
-            ${
-              activeEmployees.length > 0
-                ? activeEmployees
-                    .map(
-                      (item) => `
-                        <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                          <strong>${item.full_name || "Employee"}</strong><br/>
-                          ${item.email || "-"}<br/>
-                          Payment type: ${item.payment_type || "Not defined"}<br/>
-                          Worked: ${formatHours(item.total_hours)}
-                        </div>
-                      `
-                    )
-                    .join("")
-                : `<p>No active employees in this selection.</p>`
-            }
-
-            <hr style="margin: 24px 0;" />
-
-            <h2 style="color: #b45309;">Cash in Hand</h2>
-            <p style="margin-top: 0;">
-              Internal operational record for same-day or direct cash payments.
-            </p>
-            ${
-              cashPayments.length > 0
-                ? cashPayments
-                    .map(
-                      (item) => `
-                        <div style="margin-bottom: 14px; padding: 10px; border: 1px solid #f59e0b; border-radius: 8px; background: #fffbeb;">
-                          <strong>${item.full_name || "Employee"}</strong><br/>
-                          ${item.email || "-"}<br/>
-                          Payment type: ${item.payment_type || "cash_in_hand"}<br/>
-                          Worked: ${formatHours(item.total_hours)}
-                        </div>
-                      `
-                    )
-                    .join("")
-                : `<p>No cash in hand employees in this selection.</p>`
-            }
-          </body>
-        </html>
-      `;
-
-      const file = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(file.uri);
+      const html = createInternalReportHtml(activeEmployees, cashPayments);
+      await generatePdfOrPrint(html);
     } catch (error) {
       console.log("INTERNAL PDF ERROR:", error);
       Alert.alert("Error", "Failed to generate internal report");
@@ -296,6 +450,7 @@ export default function AdminReportsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.name}>{item.full_name}</Text>
             <Text style={styles.email}>{item.email}</Text>
+
             <Text style={styles.hours}>
               Worked: {formatHours(item.total_hours)}
             </Text>
@@ -307,9 +462,7 @@ export default function AdminReportsScreen() {
             )}
 
             {isInactive && (
-              <Text style={styles.inactiveLabel}>
-                Inactive employee
-              </Text>
+              <Text style={styles.inactiveLabel}>Inactive employee</Text>
             )}
           </View>
 
@@ -399,63 +552,75 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f5f7fb",
   },
+
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f5f7fb",
   },
+
   title: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 16,
   },
+
   summaryCard: {
     backgroundColor: "#fff",
     padding: 12,
     borderRadius: 10,
     marginBottom: 12,
   },
+
   exportButton: {
     backgroundColor: "#2563eb",
     padding: 14,
     borderRadius: 10,
     marginBottom: 10,
   },
+
   secondaryButton: {
     backgroundColor: "#7c3aed",
     padding: 14,
     borderRadius: 10,
     marginBottom: 10,
   },
+
   clearButton: {
     backgroundColor: "#dc2626",
     padding: 14,
     borderRadius: 10,
     marginBottom: 10,
   },
+
   refreshButton: {
     backgroundColor: "#0f766e",
     padding: 14,
     borderRadius: 10,
     marginBottom: 10,
   },
+
   backButton: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 10,
+    marginTop: 4,
     marginBottom: 10,
+    padding: 12,
+    alignItems: "center",
   },
+
   buttonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
   },
+
   backText: {
     textAlign: "center",
     fontWeight: "600",
+    color: "#111827",
   },
+
   card: {
     backgroundColor: "#fff",
     padding: 12,
@@ -464,46 +629,56 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
+
   cardSelected: {
     borderColor: "#2563eb",
     borderWidth: 2,
   },
+
   cardCashInHand: {
     backgroundColor: "#fef2f2",
   },
+
   cardInactive: {
     backgroundColor: "#f3f4f6",
   },
+
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+
   name: {
     fontWeight: "bold",
     fontSize: 16,
   },
+
   email: {
     color: "#6b7280",
     marginTop: 2,
   },
+
   hours: {
     color: "#0f766e",
     fontWeight: "bold",
     marginTop: 6,
   },
+
   cashLabel: {
     marginTop: 6,
     color: "#b91c1c",
     fontWeight: "600",
     fontSize: 12,
   },
+
   inactiveLabel: {
     marginTop: 6,
     color: "#6b7280",
     fontWeight: "600",
     fontSize: 12,
   },
+
   checkbox: {
     width: 28,
     height: 28,
@@ -514,15 +689,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 12,
   },
+
   checkboxSelected: {
     backgroundColor: "#2563eb",
     borderColor: "#2563eb",
   },
+
   checkboxText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
+
   emptyText: {
     textAlign: "center",
     color: "#6b7280",
