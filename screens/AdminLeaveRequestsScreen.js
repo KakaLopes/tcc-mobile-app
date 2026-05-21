@@ -1,10 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Linking,
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+
 export default function AdminLeaveRequestsScreen() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,11 +36,7 @@ export default function AdminLeaveRequestsScreen() {
 
       setRequests(response.data || []);
     } catch (error) {
-      console.log(
-        "LOAD LEAVES ERROR:",
-        error?.response?.data || error.message
-      );
-
+      console.log("LOAD LEAVES ERROR:", error?.response?.data || error.message);
       Alert.alert("Error", "Unable to load leave requests");
     } finally {
       setLoading(false);
@@ -52,12 +57,20 @@ export default function AdminLeaveRequestsScreen() {
         }
       );
 
-      Alert.alert(
-        "Success",
-        status === "approved"
-          ? "Leave request approved"
-          : "Leave request rejected"
-      );
+      if (Platform.OS === "web") {
+        window.alert(
+          status === "approved"
+            ? "Success: Leave request approved"
+            : "Success: Leave request rejected"
+        );
+      } else {
+        Alert.alert(
+          "Success",
+          status === "approved"
+            ? "Leave request approved"
+            : "Leave request rejected"
+        );
+      }
 
       loadLeaveRequests();
     } catch (error) {
@@ -73,66 +86,51 @@ export default function AdminLeaveRequestsScreen() {
     }
   }
 
-async function handleViewDocument(item) {
-  try {
-    if (!item?.attachment_url) {
-      Alert.alert("Info", "No document available for this request.");
-      return;
-    }
+  async function handleViewDocument(item) {
+    try {
+      if (!item?.attachment_url) {
+        Alert.alert("Info", "No document available for this request.");
+        return;
+      }
 
-    const fileName = item.attachment_name || "medical-certificate.pdf";
-    const safeFileName = fileName.endsWith(".pdf")
-      ? fileName
-      : `${fileName}.pdf`;
+      if (Platform.OS === "web") {
+        window.open(item.attachment_url, "_blank");
+        return;
+      }
 
-    const localUri = `${FileSystem.cacheDirectory}${safeFileName}`;
+      const fileName = item.attachment_name || "medical-certificate.pdf";
+      const localUri = `${FileSystem.cacheDirectory}${fileName}`;
 
-    console.log("DOWNLOAD URL:", item.attachment_url);
-    console.log("LOCAL URI:", localUri);
-
-    const downloadResult = await FileSystem.downloadAsync(
-      item.attachment_url,
-      localUri
-    );
-
-    console.log("DOWNLOAD RESULT:", downloadResult);
-
-    if (downloadResult.status !== 200) {
-      Alert.alert(
-        "Error",
-        `Unable to download document. Status: ${downloadResult.status}`
+      const downloadResult = await FileSystem.downloadAsync(
+        item.attachment_url,
+        localUri
       );
-      return;
+
+      if (downloadResult.status !== 200) {
+        Alert.alert(
+          "Error",
+          `Unable to download document. Status: ${downloadResult.status}`
+        );
+        return;
+      }
+
+      const sharingAvailable = await Sharing.isAvailableAsync();
+
+      if (!sharingAvailable) {
+        Alert.alert("Error", "Sharing is not available on this device.");
+        return;
+      }
+
+      await Sharing.shareAsync(downloadResult.uri, {
+        mimeType: item.attachment_type || "application/pdf",
+        dialogTitle: "Open medical certificate",
+      });
+    } catch (error) {
+      console.log("OPEN DOCUMENT ERROR:", error);
+      Alert.alert("Error", error?.message || "Unable to open document.");
     }
-
-    const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
-    console.log("DOWNLOADED FILE INFO:", fileInfo);
-
-    if (!fileInfo.exists) {
-      Alert.alert("Error", "Downloaded file not found on device.");
-      return;
-    }
-
-    const sharingAvailable = await Sharing.isAvailableAsync();
-
-    if (!sharingAvailable) {
-      Alert.alert("Error", "Sharing is not available on this device.");
-      return;
-    }
-
-    await Sharing.shareAsync(downloadResult.uri, {
-      mimeType: "application/pdf",
-      dialogTitle: "Open medical certificate",
-      UTI: "com.adobe.pdf",
-    });
-  } catch (error) {
-    console.log("OPEN DOCUMENT ERROR:", error);
-    Alert.alert(
-      "Error",
-      error?.message || "Unable to download document."
-    );
   }
-}
+
   function formatDate(date) {
     const d = new Date(date);
     const day = String(d.getDate()).padStart(2, "0");
@@ -165,7 +163,7 @@ async function handleViewDocument(item) {
   }
 
   function hasAttachment(item) {
-    return !!item.attachment_name;
+    return !!item.attachment_url || !!item.attachment_name;
   }
 
   function renderItem({ item }) {
@@ -177,14 +175,17 @@ async function handleViewDocument(item) {
         <Text style={styles.name}>
           {item.user?.full_name || "Unknown employee"}
         </Text>
+
         <Text style={styles.email}>{item.user?.email || "-"}</Text>
 
         <Text style={styles.info}>Type: {formatLeaveType(item.leave_type)}</Text>
         <Text style={styles.info}>Start: {formatDate(item.start_date)}</Text>
         <Text style={styles.info}>End: {formatDate(item.end_date)}</Text>
+
         <Text style={styles.info}>
           Days: {calculateDays(item.start_date, item.end_date)}
         </Text>
+
         <Text style={styles.info}>Reason: {item.reason || "-"}</Text>
 
         {showMedicalCertificate && (
@@ -192,9 +193,11 @@ async function handleViewDocument(item) {
             <Text style={styles.attachmentTitle}>
               Medical certificate attached
             </Text>
+
             <Text style={styles.attachmentInfo}>
-              File: {item.attachment_name}
+              File: {item.attachment_name || "Document"}
             </Text>
+
             <Text style={styles.attachmentInfo}>
               Type: {item.attachment_type || "Unknown"}
             </Text>
@@ -265,12 +268,14 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#f5f7fb",
   },
+
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f5f7fb",
   },
+
   title: {
     fontSize: 26,
     fontWeight: "bold",
@@ -278,12 +283,14 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 20,
   },
+
   empty: {
     textAlign: "center",
     color: "#6b7280",
     fontSize: 16,
     marginTop: 40,
   },
+
   card: {
     backgroundColor: "#ffffff",
     borderRadius: 14,
@@ -292,22 +299,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
   },
+
   name: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#111827",
     marginBottom: 4,
   },
+
   email: {
     fontSize: 14,
     color: "#6b7280",
     marginBottom: 10,
   },
+
   info: {
     fontSize: 15,
     color: "#374151",
     marginBottom: 4,
   },
+
   attachmentBox: {
     backgroundColor: "#eff6ff",
     borderWidth: 1,
@@ -317,46 +328,56 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 6,
   },
+
   attachmentTitle: {
     fontSize: 15,
     fontWeight: "bold",
     color: "#1d4ed8",
     marginBottom: 6,
   },
+
   attachmentInfo: {
     fontSize: 14,
     color: "#374151",
     marginBottom: 2,
   },
+
   viewDocumentButton: {
     backgroundColor: "#2563eb",
     padding: 10,
     borderRadius: 8,
     marginTop: 10,
   },
+
   viewDocumentText: {
     color: "#ffffff",
     textAlign: "center",
     fontWeight: "600",
   },
+
   status: {
     marginTop: 10,
     fontWeight: "bold",
     fontSize: 15,
   },
+
   statusPending: {
     color: "#d97706",
   },
+
   statusApproved: {
     color: "#15803d",
   },
+
   statusRejected: {
     color: "#dc2626",
   },
+
   actions: {
     flexDirection: "row",
     marginTop: 14,
   },
+
   approveButton: {
     flex: 1,
     backgroundColor: "#16a34a",
@@ -364,6 +385,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 6,
   },
+
   rejectButton: {
     flex: 1,
     backgroundColor: "#dc2626",
@@ -371,6 +393,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginLeft: 6,
   },
+
   actionText: {
     color: "#fff",
     textAlign: "center",

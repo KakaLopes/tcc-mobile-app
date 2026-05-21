@@ -190,8 +190,17 @@ export default function RequestLeaveScreen() {
         },
       });
 
-      Alert.alert("Success", "Leave request submitted successfully.");
-      router.replace("/");
+      if (Platform.OS === "web") {
+  window.alert("Success: Leave request submitted successfully.");
+  router.replace("/");
+} else {
+  Alert.alert("Success", "Leave request submitted successfully.", [
+    {
+      text: "OK",
+      onPress: () => router.replace("/"),
+    },
+  ]);
+}
     } catch (error) {
       console.log("REQUEST LEAVE FULL ERROR:", error);
       console.log("REQUEST LEAVE RESPONSE:", error?.response?.data);
