@@ -44,22 +44,16 @@ export default function RegisterScreen() {
         address,
       });
 
-      if (response.data?.user) {
-        await AsyncStorage.setItem(
-          "user",
-          JSON.stringify(response.data.user)
-        );
-      }
+      Alert.alert("Success", "Account created successfully! Please log in.");
 
-      Alert.alert("Success", "Account created successfully!");
-      router.replace("/");
+router.replace("login");
     } catch (error) {
       console.log("REGISTER ERROR:", error?.response?.data || error.message);
 
       Alert.alert(
-        "Error",
-        error?.response?.data?.error || "Unable to create account"
-      );
+  "Error",
+  JSON.stringify(error?.response?.data || error.message)
+);
     } finally {
       setLoading(false);
     }
