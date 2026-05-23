@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://neil-suitable-collect-simulation.trycloudflare.com",
+  baseURL: "https://worktime-backend.onrender.com",
+  timeout: 15000,
 });
 
 export default api;
