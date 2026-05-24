@@ -1,56 +1,72 @@
 # 📱 Work Time Management System – Mobile App
 
-This mobile application was developed as part of a Final Year Project for the Software Engineering course.
+This mobile application was developed as part of a Final Year Project (TCC) for the Software Engineering course.
 
-It is designed for employees and administrators of cafés and small businesses to manage working hours, track attendance, and handle leave requests directly from their mobile devices.
+The system was designed for cafés and small businesses to manage employee working hours, attendance tracking, leave requests, and administrative operations through a modern mobile application.
 
-The app communicates with a Node.js backend API and provides a simple, intuitive interface for daily use.
+The application communicates with a Node.js backend API hosted online and supports Android devices, web access, and real-time integration with a MySQL database.
 
 ---
 
 # 🚀 Technologies Used
 
-- React Native  
-- Expo  
-- Axios  
-- AsyncStorage  
-- Expo Router  
-- Expo Document Picker  
-- Expo File System  
-- Expo Linking  
-- JavaScript (ES6+)  
+## Frontend
+- React Native
+- Expo
+- Expo Router
+- Axios
+- AsyncStorage
+
+## Mobile Features
+- Expo Document Picker
+- Expo File System
+- Expo Sharing
+- Expo Linking
+
+## Backend Communication
+- REST API
+- JWT Authentication
+
+## Deployment & Infrastructure
+- Render (Backend Hosting)
+- Aiven MySQL Cloud Database
+
+## Language
+- JavaScript (ES6+)
 
 ---
 
 # 🏗 Application Architecture
 
-The mobile app follows a **component-based architecture**:
+The mobile application follows a component-based architecture:
 
-- Screens – UI and user interaction  
-- Services – API communication  
-- State management – React hooks (useState, useEffect)  
-- Navigation – Expo Router  
-- Storage – AsyncStorage (JWT token)  
+- Screens → User interface and interaction
+- Services → API communication layer
+- Navigation → Expo Router
+- State Management → React Hooks
+- Authentication → JWT + AsyncStorage
+- Backend Integration → REST API
 
 ---
 
 # 📂 Project Structure
 
-```
-mobile
+```bash
+mobile-app
 │
 ├── app
 │   ├── login.js
+│   ├── register.js
 │   ├── home.js
 │   ├── requestLeave.js
 │   ├── adminLeaveRequests.js
-│   └── reports.js
+│   ├── adminReports.js
+│   └── profile.js
 │
 ├── services
 │   └── api.js
 │
 ├── assets
-│
 ├── components
 │
 ├── package.json
@@ -61,12 +77,17 @@ mobile
 
 # 🔐 Authentication
 
-- User logs in using email and password  
-- Backend returns a JWT token  
-- Token is stored locally using AsyncStorage  
-- Token is sent in all protected requests  
+The application uses JWT authentication.
 
-```
+## Features
+- Secure login with email and password
+- JWT token generation on backend
+- Token stored locally using AsyncStorage
+- Protected routes and admin authorization
+
+Example:
+
+```text
 Authorization: Bearer TOKEN
 ```
 
@@ -74,132 +95,158 @@ Authorization: Bearer TOKEN
 
 # ⏱ Main Features
 
-## Login
-
-- Secure authentication using JWT  
-- Error handling for invalid credentials  
-
----
-
-## Clock-in / Clock-out
-
-- Register working hours in real time  
-- Prevent duplicate clock-in  
-- Automatic duration calculation  
+## 🔓 Authentication
+- Login and registration system
+- JWT-based authentication
+- Secure protected routes
+- Role-based access control
 
 ---
 
-## Work Tracking
-
-- View hours worked today  
-- View weekly work summary  
-- Access work history  
-
----
-
-## 🏖 Leave Requests
-
-- Request different types of leave:
-  - Vacation  
-  - Day Off  
-  - Sick Leave  
-  - Other  
-
-- Validate dates and inputs  
-- Prevent invalid submissions  
+## ⏰ Clock In / Clock Out
+- Register working hours in real time
+- Prevent duplicate clock-in
+- Automatic work duration calculation
+- Daily and weekly work summaries
 
 ---
 
-## 📎 Document Upload (Sick Leave)
+## 📊 Work Tracking
+- Hours worked today
+- Weekly report
+- Work history
+- Attendance monitoring
 
-- Upload medical certificate (PDF or image)  
-- Convert file to Base64  
-- Send to backend (Cloudinary storage)  
-- Attach document to leave request  
+---
+
+## 🏖 Leave Management
+
+Employees can request:
+
+- Vacation
+- Day Off
+- Sick Leave
+- Other leave types
+
+### Validation Features
+- Date validation
+- Required field validation
+- Invalid request prevention
+
+---
+
+## 📎 Medical Certificate Upload
+
+Sick Leave requests support:
+
+- PDF upload
+- Image upload
+- Base64 conversion
+- Cloudinary integration
+- Document attachment storage
 
 ---
 
 ## 👨‍💼 Admin Features
 
-- View all leave requests  
-- Approve or reject requests  
-- View employee information  
-- Open uploaded documents  
+Administrators can:
+
+- View all employees
+- Approve/reject leave requests
+- Access uploaded documents
+- Manage employees
+- Generate reports
+- Access admin dashboard
+- Create new employees
+- Promote users to admin
 
 ---
 
-# 🌐 API Configuration
+# 🌐 Online Infrastructure
 
-Base URL is configured in:
+## Backend API
+Hosted on Render:
 
+```text
+https://worktime-backend.onrender.com
 ```
-services/api.js
-```
 
-Example:
+## Database
+Hosted on Aiven MySQL Cloud.
 
-```js
-const api = axios.create({
-  baseURL: "http://192.168.0.9:3000"
-});
+---
+
+# 🌍 Web Support
+
+The application also supports web access through Expo Web:
+
+```bash
+npx expo start --web
 ```
 
 ---
 
-# ▶️ How to Run the App
+# ▶️ How to Run the Project
 
-Install dependencies
+## Install dependencies
 
-```
+```bash
 npm install
 ```
 
-Start Expo
+## Start Expo
 
-```
+```bash
 npx expo start
 ```
 
-Run on device
+## Run on Android
 
-- Scan QR code with Expo Go  
-- Or run on emulator  
+```bash
+eas build -p android --profile preview
+```
+
+## Run Web Version
+
+```bash
+npx expo start --web
+```
+
+---
+
+# 📱 APK Build
+
+The application can be installed as an Android APK generated using Expo EAS Build.
 
 ---
 
 # ⚠️ Important Notes
 
-- The mobile app requires the backend to be running  
-- Make sure the IP address is correct (same Wi-Fi network)  
-- File upload requires backend + Cloudinary configured  
-- Ensure permissions for file access are enabled  
+- Backend API must be online
+- Database connection required
+- Cloudinary required for uploads
+- Internet connection required
+- JWT token required for protected routes
 
 ---
 
 # 🔮 Future Improvements
 
-- Push notifications (leave approval)  
-- GPS validation for clock-in  
-- Offline mode support  
-- Dark mode  
-- In-app PDF preview  
-
----
-
-# 🌐 Backend API
-
-This mobile app consumes the backend:
-
-```
-https://tcc-backend-jornada-production.up.railway.app
-```
+- Push notifications
+- GPS validation for clock-in
+- Offline mode
+- Dark mode
+- In-app PDF preview
+- Employee analytics dashboard
+- Export reports to PDF
 
 ---
 
 # 👨‍🎓 Author
 
 Catalina Lopes  
-Software Engineering – Final Project (TCC)
+Bachelor Degree in Software Engineering  
+Final Year Project (TCC)
 
 ---
 
@@ -207,10 +254,13 @@ Software Engineering – Final Project (TCC)
 
 This project demonstrates knowledge in:
 
-- Mobile development with React Native  
-- API integration (REST)  
-- Authentication using JWT  
-- File upload handling  
-- State management with React Hooks  
-- Real-world system design  
-- Full-stack development
+- Mobile Development
+- Full-Stack Development
+- REST API Integration
+- JWT Authentication
+- Cloud Deployment
+- Database Management
+- File Upload Handling
+- Real-World System Design
+- Mobile Architecture
+- Administrative Systems
