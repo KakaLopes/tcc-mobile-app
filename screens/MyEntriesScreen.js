@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../services/api";
@@ -30,9 +31,7 @@ export default function MyEntriesScreen() {
       }
 
       const response = await api.get("/my-entries", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       setEntries(response.data || []);
@@ -48,80 +47,64 @@ export default function MyEntriesScreen() {
     }
   }
 
+  async function sendAdjustment(item, newTime, reason) {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      const originalDate = new Date(item.clock_in);
+      const [hours, minutes] = newTime.split(":");
+
+      const newDate = new Date(originalDate);
+      newDate.setHours(Number(hours));
+      newDate.setMinutes(Number(minutes));
+      newDate.setSeconds(0);
+
+      await api.post(
+        "/adjustments/request",
+        {
+          work_entry_id: item.id,
+          old_value: item.clock_in,
+          new_value: newDate.toISOString(),
+          reason,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      Alert.alert("Success", "Adjustment request sent successfully.");
+    } catch (error) {
+      console.log("ADJUSTMENT ERROR:", error?.response?.data || error.message);
+
+      Alert.alert(
+        "Error",
+        error?.response?.data?.error || "Unable to send adjustment request"
+      );
+    }
+  }
+
   async function handleAdjust(item) {
-    Alert.prompt(
-      "New time",
-      "Enter the new time in HH:MM format",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Continue",
-          onPress: (newTime) => {
-            if (!newTime || !/^\d{2}:\d{2}$/.test(newTime)) {
-              Alert.alert("Error", "Please enter the time in HH:MM format.");
-              return;
-            }
+    if (Platform.OS === "web") {
+      const newTime = window.prompt("Enter the new time in HH:MM format");
 
-            Alert.prompt(
-              "Adjustment reason",
-              "Describe the reason for this adjustment",
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                },
-                {
-                  text: "Submit",
-                  onPress: async (reason) => {
-                    try {
-                      const token = await AsyncStorage.getItem("token");
+      if (!newTime) return;
 
-                      const originalDate = new Date(item.clock_in);
-                      const [hours, minutes] = newTime.split(":");
+      if (!/^\d{2}:\d{2}$/.test(newTime)) {
+        Alert.alert("Error", "Please enter the time in HH:MM format.");
+        return;
+      }
 
-                      const newDate = new Date(originalDate);
-                      newDate.setHours(Number(hours));
-                      newDate.setMinutes(Number(minutes));
-                      newDate.setSeconds(0);
+      const reason = window.prompt("Describe the reason for this adjustment");
 
-                      await api.post(
-                        "/adjustments/request",
-                        {
-                          work_entry_id: item.id,
-                          old_value: item.clock_in,
-                          new_value: newDate.toISOString(),
-                          reason,
-                        },
-                        {
-                          headers: {
-                            Authorization: `Bearer ${token}`,
-                          },
-                        }
-                      );
+      if (!reason) return;
 
-                      Alert.alert("Success", "Adjustment request sent successfully.");
-                    } catch (error) {
-                      console.log(
-                        "ADJUSTMENT ERROR:",
-                        error?.response?.data || error.message
-                      );
+      await sendAdjustment(item, newTime, reason);
+      return;
+    }
 
-                      Alert.alert(
-                        "Error",
-                        error?.response?.data?.error ||
-                          "Unable to send adjustment request"
-                      );
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
+    Alert.alert(
+      "Request Adjustment",
+      "This feature is available on Web in this version."
     );
   }
 
@@ -160,8 +143,7 @@ export default function MyEntriesScreen() {
         <Text style={styles.date}>📅 {formatDate(item.clock_in)}</Text>
 
         <Text style={styles.label}>
-          Clock-in:{" "}
-          <Text style={styles.value}>{formatTime(item.clock_in)}</Text>
+          Clock-in: <Text style={styles.value}>{formatTime(item.clock_in)}</Text>
         </Text>
 
         <Text style={styles.label}>
